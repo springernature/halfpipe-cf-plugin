@@ -6,12 +6,16 @@ if [ ! -z "${RUNNING_IN_CI}" ]; then
     echo "Installing and putting CF on path"
     TMPDIR=`mktemp -d`
     CF_TAR_URL="https://packages.cloudfoundry.org/stable?release=linux64-binary&version=6.35.0&source=github-rel"
-    wget -qO- ${CF_TAR_URL} | tar xvz -C $TMPDIR
+    wget -qO- ${CF_TAR_URL} | tar xvz -C $TMPDIR > /dev/null
     export PATH=$PATH:$TMPDIR
 
-    echo "Copying vendor stuff into gopath."
-    cp -r vendor/* ${GOPATH}/src
+    echo "Copying this repo into gopath, uuuugly."
+    PATH_IN_GOPATH=${GOPATH}/src/github.com/springernature/halfpipe-cf-plugin
+    mkdir -p ${PATH_IN_GOPATH}
+    cp -r * ${PATH_IN_GOPATH}
 
+    echo "Changing dir to ${PATH_IN_GOPATH}"
+    cd ${PATH_IN_GOPATH}
 fi
 
 echo Unit Tests
