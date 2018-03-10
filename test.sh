@@ -9,8 +9,9 @@ if [ ! -z "${RUNNING_IN_CI}" ]; then
     wget -qO- ${CF_TAR_URL} | tar xvz -C $TMPDIR
     export PATH=$PATH:$TMPDIR
 
-    echo "Overiding GOPATH to current dir"
-    export GOPATH=`pwd`
+    echo "Copying vendor stuff into gopath."
+    cp -r vendor/* ${GOPATH}/src
+
 fi
 
 echo Unit Tests
