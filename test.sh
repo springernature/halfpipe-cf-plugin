@@ -21,7 +21,7 @@ fi
 echo Unit Tests
 echo
 
-go test ./...
+go test ./... -cover
 
 echo
 echo Integration Test
