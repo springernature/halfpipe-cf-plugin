@@ -21,9 +21,7 @@ func (m MockExecutor) CliCommand(args ...string) ([]string, error) {
 }
 
 func TestCommand_String(t *testing.T) {
-	c := Command{
-		args: []string{"push", "-f", "man"},
-	}
+	c := NewCfCommand("push", "-f", "man")
 
 	expected := "cf push -f man"
 	assert.Equal(t, expected, c.String())
@@ -31,8 +29,8 @@ func TestCommand_String(t *testing.T) {
 
 func TestPlan_String(t *testing.T) {
 	p := Plan{
-		{[]string{"push"}},
-		{[]string{"delete"}},
+		NewCfCommand("push"),
+		NewCfCommand("delete"),
 	}
 
 	expected := `Planned execution
@@ -46,7 +44,7 @@ func TestPlan_ExecutePassesOnError(t *testing.T) {
 	expectedError := errors.New("Expected error")
 
 	p := Plan{
-		{[]string{"error"}},
+		NewCfCommand("error"),
 	}
 
 	err := p.Execute(MockExecutor{
@@ -63,10 +61,10 @@ func TestPlan_ExecutePassesOnErrorIfItHappensInTheMiddleOfThePlan(t *testing.T) 
 	var numberOfCalls int
 
 	p := Plan{
-		{[]string{"ok"}},
-		{[]string{"ok"}},
-		{[]string{"error"}},
-		{[]string{"ok"}},
+		NewCfCommand("ok"),
+		NewCfCommand("ok"),
+		NewCfCommand("error"),
+		NewCfCommand("ok"),
 	}
 
 	err := p.Execute(MockExecutor{
@@ -87,10 +85,10 @@ func TestPlan_Execute(t *testing.T) {
 	var numberOfCalls int
 
 	p := Plan{
-		{[]string{"ok"}},
-		{[]string{"ok"}},
-		{[]string{"ok"}},
-		{[]string{"ok"}},
+		NewCfCommand("ok"),
+		NewCfCommand("ok"),
+		NewCfCommand("ok"),
+		NewCfCommand("ok"),
 	}
 
 	err := p.Execute(MockExecutor{

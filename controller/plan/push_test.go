@@ -11,13 +11,7 @@ func TestGivesBackAPushPlanThatPushesDataWithoutSpecifyingAppBits(t *testing.T) 
 	manifetPath := "path/to/manifest.yml"
 
 	expectedPlan := Plan{
-		{
-			args: []string{
-				"push",
-				"-f",
-				manifetPath,
-			},
-		},
+		NewCfCommand("push", "-f", manifetPath),
 	}
 
 	push := NewPush(manifetPath, "")
@@ -35,15 +29,7 @@ func TestGivesBackAPushPlanThatPushesDataWithAppBits(t *testing.T) {
 	appPath := "path/to/app.jar"
 
 	expectedPlan := Plan{
-		{
-			args: []string{
-				"push",
-				"-f",
-				manifestPath,
-				"-p",
-				appPath,
-			},
-		},
+		NewCfCommand("push", "-f", manifestPath, "-p", appPath),
 	}
 
 	push := NewPush(manifestPath, appPath)

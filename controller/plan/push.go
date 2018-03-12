@@ -6,9 +6,7 @@ type push struct {
 }
 
 func (p push) Commands() (plan Plan, err error) {
-	command := Command{
-		[]string{"push", "-f", p.manifestPath},
-	}
+	command := NewCfCommand("push", "-f", p.manifestPath)
 
 	if p.appPath != "" {
 		command.args = append(command.args, "-p", p.appPath)
@@ -24,16 +22,3 @@ func NewPush(manifestPath string, appPath string) push {
 		appPath,
 	}
 }
-
-//func (p push) Commands() (plan Plan, err error) {
-//	command := Command{
-//		[]string{"push", "-f", p.manifestPath},
-//	}
-//
-//	if p.appPath != "" {
-//		command.args = append(command.args, "-p", p.appPath)
-//	}
-//
-//	plan = append(plan, command)
-//	return
-//}

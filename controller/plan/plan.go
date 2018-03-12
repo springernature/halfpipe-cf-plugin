@@ -7,11 +7,19 @@ import (
 )
 
 type Command struct {
-	args []string
+	command string
+	args    []string
+}
+
+func NewCfCommand(args ...string) Command {
+	return Command{
+		command: "cf",
+		args:    args,
+	}
 }
 
 func (c Command) String() string {
-	return fmt.Sprintf("cf %s", strings.Join(c.args, " "))
+	return fmt.Sprintf("%s %s", c.command, strings.Join(c.args, " "))
 }
 
 type Plan []Command
@@ -31,6 +39,7 @@ func (c Plan) Execute(executor Executor, logger *log.Logger) (err error) {
 		if err != nil {
 			return
 		}
+		logger.Println("Suceeded!")
 	}
 	return
 }
