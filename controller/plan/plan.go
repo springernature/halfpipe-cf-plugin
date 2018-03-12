@@ -2,8 +2,8 @@ package plan
 
 import (
 	"fmt"
-	"strings"
 	"log"
+	"strings"
 )
 
 type Command struct {

@@ -3,10 +3,11 @@ package plan
 import (
 	"testing"
 
+	"io/ioutil"
+	"log"
+
 	"code.cloudfoundry.org/cli/cf/errors"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"io/ioutil"
 )
 
 var DevNullWriter = log.New(ioutil.Discard, "", 0)

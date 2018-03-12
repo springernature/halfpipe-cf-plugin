@@ -1,12 +1,13 @@
 package main
 
 import (
-	"code.cloudfoundry.org/cli/plugin"
 	"flag"
-	"syscall"
-	"github.com/springernature/halfpipe-cf-plugin/controller"
 	"log"
 	"os"
+	"syscall"
+
+	"code.cloudfoundry.org/cli/plugin"
+	"github.com/springernature/halfpipe-cf-plugin/controller"
 )
 
 type Halfpipe struct{}

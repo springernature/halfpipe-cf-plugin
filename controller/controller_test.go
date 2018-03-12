@@ -2,9 +2,10 @@ package controller
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
+
 	"code.cloudfoundry.org/cli/cf/errors"
 	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockPlan struct {
