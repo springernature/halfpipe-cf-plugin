@@ -17,8 +17,10 @@ RUN go build -o /opt/resource/in resource/cmd/in/in.go
 
 FROM golang:alpine AS resource
 RUN apk add --no-cache bash tzdata ca-certificates jq
-COPY --from=builder /opt/resource/ /opt/resource/
+COPY --from=builder /opt/resource/* /opt/resource/
 COPY --from=builder /bin/cf /bin/cf
 COPY --from=builder /root/.cf /root/.cf
+
+RUN chmod +x /opt/resource/*
 
 FROM resource
