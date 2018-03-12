@@ -18,20 +18,8 @@ if [ ! -z "${RUNNING_IN_CI}" ]; then
     cd ${PATH_IN_GOPATH}
 fi
 
-echo goimports
-goimports -l -w $(find . -type f -name '*.go' -not -path "./vendor/*") # ignore vendore plz..s
-
-
 echo go test
 go test -cover ./...
-
-
-echo dep status
-if ! ds=$(dep status 2> /dev/null); then
-    echo "${ds}"
-    echo "Run 'dep ensure' to fix"
-    exit 1
-fi
 
 echo
 echo Integration Test
