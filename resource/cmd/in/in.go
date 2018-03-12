@@ -1,11 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"syscall"
-	"errors"
 	"io/ioutil"
 )
 
