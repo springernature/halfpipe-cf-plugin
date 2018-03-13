@@ -64,6 +64,12 @@
   version = "v1.6.0"
 
 [[projects]]
+  name = "github.com/kr/pty"
+  packages = ["."]
+  revision = "282ce0e5322c82529687d609ee670fac7c7d917c"
+  version = "v1.1.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/lunixbochs/vtclean"
   packages = ["."]
@@ -151,6 +157,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "78b0f7ce6e0a52d6d788f7dc59fe6dcc83f38123ebd2f1a08e778c87a8ecf9c4"
+  inputs-digest = "797635878e4337594c81b61f81a4503e94e509accacb5894ae42723d124ae654"
   solver-name = "gps-cdcl"
   solver-version = 1
