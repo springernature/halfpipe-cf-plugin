@@ -12,6 +12,8 @@ import (
 
 func main() {
 
+	concourseRoot := os.Args[0]
+
 	logger := log.New(os.Stderr, "", 0)
 
 	data, err := ioutil.ReadAll(os.Stdin)
@@ -27,18 +29,11 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	p, err := resource_plan.NewPush().Plan(request)
+	p, err := resource_plan.NewPush().Plan(request, concourseRoot)
 	if err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
 	}
-
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Println("In directory")
-	logger.Println(dir)
 
 	logger.Println(p)
 	if err = p.Execute(out.NewCliExecutor(logger), logger); err != nil {

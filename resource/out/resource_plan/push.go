@@ -5,6 +5,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/resource/out"
 	"fmt"
 	"errors"
+	"path"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) (error) {
@@ -13,18 +14,17 @@ var NewErrEmptyParamValue = func(fieldName string) (error) {
 }
 
 type ErrEmptySourceValue error
+
 var NewErrEmptySourceValue = func(fieldName string) (error) {
 	errorMsg := fmt.Sprintf("Field source.%s must not be empty!", fieldName)
 	return errors.New(errorMsg)
 }
-
 
 type push struct{}
 
 func NewPush() push {
 	return push{}
 }
-
 
 func checkParamField(field string, value string) (err error) {
 	if value == "" {
@@ -68,7 +68,7 @@ func check(request out.Request) (err error) {
 	return
 }
 
-func (push) Plan(request out.Request) (p plan.Plan, err error) {
+func (push) Plan(request out.Request, concourseRoot string) (p plan.Plan, err error) {
 	if err = check(request); err != nil {
 		return
 	}
@@ -81,8 +81,8 @@ func (push) Plan(request out.Request) (p plan.Plan, err error) {
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
 		plan.NewCfCommand("halfpipe-push",
-			"-manifestPath", request.Params.ManifestPath,
-			"-appPath", request.Params.AppPath),
+			"-manifestPath", path.Join(concourseRoot, request.Params.ManifestPath),
+			"-appPath", path.Join(concourseRoot, request.Params.AppPath)),
 	}
 
 	return
