@@ -11,8 +11,7 @@ import (
 )
 
 func main() {
-
-	concourseRoot := os.Args[0]
+	concourseRoot := os.Args[1]
 
 	logger := log.New(os.Stderr, "", 0)
 
