@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"log"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out/resource_plan"
+	"github.com/springernature/halfpipe-cf-plugin/color"
 )
 
 func main() {
@@ -18,26 +19,26 @@ func main() {
 
 	data, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
-		logger.Println(err)
+		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
 	}
 
 	request := out.Request{}
 	err = json.Unmarshal(data, &request)
 	if err != nil {
-		logger.Println(err)
+		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
 	}
 
 	p, err := resource_plan.NewPush().Plan(request, concourseRoot)
 	if err != nil {
-		logger.Println(err)
+		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
 	}
 
-	logger.Println(p)
-	if err = p.Execute(out.NewCliExecutor(logger), logger); err != nil {
-		syscall.Exit(1)
+	logger.Println(color.ResourcePlanColor.Sprint(p))
+	if err = p.Execute(out.NewCliExecutor(), logger, color.ResourcePlanColor); err != nil {
+		os.Exit(1)
 	}
 
 

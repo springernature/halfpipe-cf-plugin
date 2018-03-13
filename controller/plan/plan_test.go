@@ -8,6 +8,7 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/springernature/halfpipe-cf-plugin/color"
 )
 
 var DevNullWriter = log.New(ioutil.Discard, "", 0)
@@ -51,7 +52,7 @@ func TestPlan_ExecutePassesOnError(t *testing.T) {
 		func(args ...string) ([]string, error) {
 			return []string{}, expectedError
 		},
-	}, DevNullWriter)
+	}, DevNullWriter, color.NoColor)
 
 	assert.Equal(t, expectedError, err)
 }
@@ -75,7 +76,7 @@ func TestPlan_ExecutePassesOnErrorIfItHappensInTheMiddleOfThePlan(t *testing.T) 
 			}
 			return []string{}, nil
 		},
-	}, DevNullWriter)
+	}, DevNullWriter, color.NoColor)
 
 	assert.Equal(t, 3, numberOfCalls)
 	assert.Equal(t, expectedError, err)
@@ -96,7 +97,7 @@ func TestPlan_Execute(t *testing.T) {
 			numberOfCalls += 1
 			return []string{}, nil
 		},
-	}, DevNullWriter)
+	}, DevNullWriter, color.NoColor)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 4, numberOfCalls)

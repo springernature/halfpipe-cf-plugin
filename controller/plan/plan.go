@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"github.com/fatih/color"
 )
 
 type Command struct {
@@ -32,14 +33,15 @@ func (c Plan) String() (s string) {
 	return
 }
 
-func (c Plan) Execute(executor Executor, logger *log.Logger) (err error) {
+func (c Plan) Execute(executor Executor, logger *log.Logger, col *color.Color) (err error) {
 	for _, p := range c {
-		logger.Println("Executing", p)
+		logger.Println(col.Sprintf("=== Executing '%s' ===", p))
 		_, err = executor.CliCommand(p.args...)
 		if err != nil {
 			return
 		}
-		logger.Println("Suceeded!")
+		logger.Println(col.Sprintf("=== Succeeded :D ==="))
+		logger.Println()
 	}
 	return
 }

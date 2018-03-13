@@ -2,35 +2,27 @@ package out
 
 import (
 	"os/exec"
-	"log"
 	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
+	"os"
 )
 
-type LogWriter log.Logger
-
-func (w *LogWriter) Write(b []byte) (int, error) {
-	(*log.Logger)(w).Print(string(b))
-	return len(b), nil
-}
-
 type cliExecutor struct {
-	Logger LogWriter
 }
 
-func NewCliExecutor(logger *log.Logger) plan.Executor {
-	writer := (LogWriter)(*logger)
-
-	return cliExecutor{
-		writer,
-	}
+func NewCliExecutor() plan.Executor {
+	return cliExecutor{}
 }
 
 func (c cliExecutor) CliCommand(args ...string) (out []string, err error) {
 	execCmd := exec.Command("cf", args...)
-	execCmd.Stdout = &c.Logger
-	execCmd.Stderr = &c.Logger
-	err = execCmd.Run()
-	if err != nil {
+	execCmd.Stdout = os.Stderr
+	execCmd.Stderr = os.Stderr
+
+	if err = execCmd.Start(); err != nil {
+		return
+	}
+
+	if err = execCmd.Wait(); err != nil {
 		return
 	}
 
