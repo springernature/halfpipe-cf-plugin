@@ -3,6 +3,7 @@ package resource_plan
 import (
 	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out"
+	"code.cloudfoundry.org/cli/util/manifest"
 	"fmt"
 	"errors"
 	"path"
@@ -20,10 +21,16 @@ var NewErrEmptySourceValue = func(fieldName string) (error) {
 	return errors.New(errorMsg)
 }
 
-type push struct{}
+type push struct {
+	manifestReader func(pathToManifest string) ([]manifest.Application, error)
+	manifestWriter func(application manifest.Application, filePath string) error
+}
 
 func NewPush() push {
-	return push{}
+	return push{
+		manifestReader: manifest.ReadAndMergeManifests,
+		manifestWriter: manifest.WriteApplicationManifest,
+	}
 }
 
 func checkParamField(field string, value string) (err error) {
@@ -68,12 +75,18 @@ func check(request out.Request) (err error) {
 	return
 }
 
-func (push) Plan(request out.Request, concourseRoot string) (p plan.Plan, err error) {
+func (p push) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err error) {
 	if err = check(request); err != nil {
 		return
 	}
 
-	p = plan.Plan{
+	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
+
+	if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
+		return
+	}
+
+	pl = plan.Plan{
 		plan.NewCfCommand("login",
 			"-a", request.Source.Api,
 			"-u", request.Source.Username,
@@ -81,9 +94,35 @@ func (push) Plan(request out.Request, concourseRoot string) (p plan.Plan, err er
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
 		plan.NewCfCommand("halfpipe-push",
-			"-manifestPath", path.Join(concourseRoot, request.Params.ManifestPath),
+			"-manifestPath", fullManifestPath,
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath)),
 	}
 
+	return
+}
+
+func (p push) updateManifestWithVars(manifestPath string, vars map[string]string) (err error) {
+	if len(vars) > 0 {
+		apps, e := p.manifestReader(manifestPath)
+		if e != nil {
+			err = e
+			return
+		}
+
+		// We just assume the first app in the manifest is the app under deployment.
+		// We should lint for only one app in the manifest in halfpipe.
+		app := apps[0]
+		if len(app.EnvironmentVariables) == 0 {
+			app.EnvironmentVariables = make(map[string]string)
+		}
+		for key, value := range vars {
+			app.EnvironmentVariables[key] = value
+		}
+
+		if err = p.manifestWriter(apps[0], manifestPath); err != nil {
+			return
+		}
+
+	}
 	return
 }

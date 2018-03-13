@@ -6,15 +6,15 @@ type Request struct {
 }
 
 type Source struct {
-	Api string
-	Org string
-	Space string
+	Api      string
+	Org      string
+	Space    string
 	Username string
 	Password string
 }
 
 type Params struct {
 	ManifestPath string
-	AppPath string
+	AppPath      string
+	Vars         map[string]string
 }
-
