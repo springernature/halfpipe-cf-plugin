@@ -7,18 +7,37 @@ import (
 )
 
 func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
-	_, err := NewPush().Plan(out.Request{})
-	assert.IsType(t, ErrEmptyParamValue(""), err)
+	_, err := NewPush().Plan(out.Request{
+		Source: out.Source{
+			Api:      "a",
+			Org:      "b",
+			Space:    "c",
+			Username: "d",
+			Password: "e",
+		},
+	})
+	assert.Equal(t, NewErrEmptyParamValue("manifestPath").Error(), err.Error())
+
+	_, err = NewPush().Plan(out.Request{
+		Params: out.Params{
+			ManifestPath: "f",
+			AppPath:      "",
+		},
+	})
+	assert.Equal(t, NewErrEmptySourceValue("space").Error(), err.Error())
+
 }
 
 func TestReturnsAPlanForCorrectRequest(t *testing.T) {
 	request := out.Request{
+		Source: out.Source{
+			Api:      "a",
+			Org:      "b",
+			Space:    "c",
+			Username: "d",
+			Password: "e",
+		},
 		Params: out.Params{
-			Api:          "a",
-			Org:          "b",
-			Space:        "c",
-			Username:     "d",
-			Password:     "e",
 			ManifestPath: "f",
 			AppPath:      "",
 		},
@@ -28,4 +47,6 @@ func TestReturnsAPlanForCorrectRequest(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, p, 2)
+	assert.Contains(t, p[0].String(), "cf login")
+	assert.Contains(t, p[1].String(), "cf halfpipe-push")
 }
