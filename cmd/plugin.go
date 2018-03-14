@@ -17,15 +17,16 @@ type Options struct {
 	ManifestPath string
 }
 
-func parseArgs(args []string) (manifestPath string, appPath string) {
+func parseArgs(args []string) (manifestPath string, appPath string, testDomain string) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
 	aP := flagSet.String("appPath", "", "Path to the app")
+	tD := flagSet.String("testDomain", "", "Domain to push the app to during the candidate stage")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
 
-	return *mP, *aP
+	return *mP, *aP, *tD
 }
 
 func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
@@ -35,9 +36,9 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 
 	logger := log.New(os.Stdout, "", 0)
 
-	manifestPath, appPath := parseArgs(args)
+	manifestPath, appPath, testDomain := parseArgs(args)
 
-	p, err := controller.NewController(args[0], manifestPath, appPath).GetPlan()
+	p, err := controller.NewController(args[0], manifestPath, appPath, testDomain).GetPlan()
 	if err != nil {
 		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"github.com/fatih/color"
 	"regexp"
+	"code.cloudfoundry.org/cli/util/manifest"
 )
 
 type Command struct {
@@ -57,7 +58,7 @@ func (c Plan) Execute(executor Executor, logger *log.Logger, col *color.Color) (
 }
 
 type Planner interface {
-	GetPlan() (Plan, error)
+	GetPlan(application manifest.Application) (Plan, error)
 }
 
 type Executor interface {

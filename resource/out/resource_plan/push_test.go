@@ -20,6 +20,7 @@ var validRequest = out.Request{
 	Params: out.Params{
 		ManifestPath: "manifest.yml",
 		AppPath:      "",
+		TestDomain:   "kehe.com",
 		Vars: map[string]string{
 			"VAR2": "bb",
 			"VAR4": "cc",
@@ -43,6 +44,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 		Params: out.Params{
 			ManifestPath: "f",
 			AppPath:      "",
+			TestDomain: "a",
 		},
 	}, "")
 	assert.Equal(t, NewErrEmptySourceValue("space").Error(), err.Error())

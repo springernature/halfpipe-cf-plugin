@@ -16,5 +16,6 @@ type Source struct {
 type Params struct {
 	ManifestPath string
 	AppPath      string
+	TestDomain   string
 	Vars         map[string]string
 }

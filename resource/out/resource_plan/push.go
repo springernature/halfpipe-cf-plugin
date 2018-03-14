@@ -52,6 +52,10 @@ func check(request out.Request) (err error) {
 		return
 	}
 
+	if err = checkParamField("testDomain", request.Params.TestDomain); err != nil {
+		return
+	}
+
 	if err = checkSourceField("space", request.Source.Space); err != nil {
 		return
 	}
@@ -95,7 +99,9 @@ func (p push) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err
 			"-s", request.Source.Space),
 		plan.NewCfCommand("halfpipe-push",
 			"-manifestPath", fullManifestPath,
-			"-appPath", path.Join(concourseRoot, request.Params.AppPath)),
+			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
+			"-testDomain", request.Params.TestDomain,
+		),
 	}
 
 	return
