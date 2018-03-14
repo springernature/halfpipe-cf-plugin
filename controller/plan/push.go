@@ -5,7 +5,7 @@ type push struct {
 	appPath      string
 }
 
-func (p push) Commands() (plan Plan, err error) {
+func (p push) GetPlan() (plan Plan, err error) {
 	command := NewCfCommand("push", "-f", p.manifestPath)
 
 	if p.appPath != "" {

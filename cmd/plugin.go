@@ -37,15 +37,14 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 
 	manifestPath, appPath := parseArgs(args)
 
-	plan, err := controller.NewController(args[0], manifestPath, appPath).Run()
+	p, err := controller.NewController(args[0], manifestPath, appPath).GetPlan()
 	if err != nil {
 		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
 	}
 
-	logger.Println(color.PlanColor.Sprint(plan))
-	err = plan.Execute(cliConnection, logger, color.PlanColor)
-	if err != nil {
+	logger.Println(color.PlanColor.Sprint(p))
+	if err = p.Execute(cliConnection, logger, color.PlanColor); err != nil {
 		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
 	}

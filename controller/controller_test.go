@@ -13,7 +13,7 @@ type MockPlan struct {
 	error error
 }
 
-func (m MockPlan) Commands() (plan.Plan, error) {
+func (m MockPlan) GetPlan() (plan.Plan, error) {
 	return m.plan, m.error
 }
 
@@ -22,7 +22,7 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 
 	expectedErr := ErrUnknownCommand(command)
 
-	_, err := NewController(command, "", "").Run()
+	_, err := NewController(command, "", "").GetPlan()
 
 	assert.Equal(t, expectedErr, err)
 
@@ -35,7 +35,7 @@ func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	controller := NewController(command, "", "")
 	controller.pushPlan = MockPlan{error: expectedErr}
 
-	_, err := controller.Run()
+	_, err := controller.GetPlan()
 
 	assert.Equal(t, expectedErr, err)
 
@@ -48,7 +48,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 	controller := NewController(command, "", "")
 	controller.pushPlan = MockPlan{plan: expectedPlan}
 
-	commands, err := controller.Run()
+	commands, err := controller.GetPlan()
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)

@@ -16,7 +16,7 @@ func TestGivesBackAPushPlanThatPushesDataWithoutSpecifyingAppBits(t *testing.T) 
 
 	push := NewPush(manifetPath, "")
 
-	commands, err := push.Commands()
+	commands, err := push.GetPlan()
 
 	assert.Nil(t, err)
 	assert.Len(t, commands, 1)
@@ -34,7 +34,7 @@ func TestGivesBackAPushPlanThatPushesDataWithAppBits(t *testing.T) {
 
 	push := NewPush(manifestPath, appPath)
 
-	commands, err := push.Commands()
+	commands, err := push.GetPlan()
 
 	assert.Nil(t, err)
 	assert.Len(t, commands, 1)

@@ -57,7 +57,7 @@ func (c Plan) Execute(executor Executor, logger *log.Logger, col *color.Color) (
 }
 
 type Planner interface {
-	Commands() (Plan, error)
+	GetPlan() (Plan, error)
 }
 
 type Executor interface {

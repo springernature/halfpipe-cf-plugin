@@ -23,10 +23,10 @@ func NewController(command string, manifestPath string, appPath string) controll
 	}
 }
 
-func (c controller) Run() (commands plan.Plan, err error) {
+func (c controller) GetPlan() (commands plan.Plan, err error) {
 	switch c.command {
 	case "halfpipe-push":
-		commands, err = c.pushPlan.Commands()
+		commands, err = c.pushPlan.GetPlan()
 	default:
 		err = ErrUnknownCommand(c.command)
 	}
