@@ -36,7 +36,6 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	logger.Println(color.ResourcePlanColor.Sprint(p))
 	if err = p.Execute(out.NewCliExecutor(), logger, color.ResourcePlanColor); err != nil {
 		os.Exit(1)
 	}

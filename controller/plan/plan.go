@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"github.com/fatih/color"
+	"regexp"
 )
 
 type Command struct {
@@ -20,7 +21,11 @@ func NewCfCommand(args ...string) Command {
 }
 
 func (c Command) String() string {
-	return fmt.Sprintf("%s %s", c.command, strings.Join(c.args, " "))
+	// For now just a dirty replace of whatever comes after "-p " to hide cf password from
+	// concourse console output
+	cfLoginPasswordRegex := regexp.MustCompile(`-p ([a-zA-Z0-9_-]+)`)
+	withPasswordRemoved := cfLoginPasswordRegex.ReplaceAllLiteralString(strings.Join(c.args, " "), "-p ********")
+	return fmt.Sprintf("%s %s", c.command, withPasswordRemoved)
 }
 
 type Plan []Command
