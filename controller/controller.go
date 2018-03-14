@@ -6,6 +6,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/errors"
 	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
 	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 var ErrUnknownCommand = func(cmd string) error {
@@ -46,9 +47,9 @@ func (c controller) GetPlan() (commands plan.Plan, err error) {
 	}
 
 	switch c.command {
-	case "halfpipe-push":
+	case halfpipe_cf_plugin.PUSH:
 		commands, err = c.pushPlan.GetPlan(apps[0])
-	case "halfpipe-promote":
+	case halfpipe_cf_plugin.PROMOTE:
 		commands, err = c.promotePlan.GetPlan(apps[0])
 	default:
 		err = ErrUnknownCommand(c.command)

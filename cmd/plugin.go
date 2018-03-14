@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/springernature/halfpipe-cf-plugin/controller"
 	"github.com/springernature/halfpipe-cf-plugin/color"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 type Halfpipe struct{}
@@ -56,10 +57,10 @@ func (Halfpipe) GetMetadata() plugin.PluginMetadata {
 		Name: "halfpipe",
 		Commands: []plugin.Command{
 			{
-				Name: "halfpipe-push",
+				Name: halfpipe_cf_plugin.PUSH,
 			},
 			{
-				Name: "halfpipe-promote",
+				Name: halfpipe_cf_plugin.PROMOTE,
 			},
 		},
 	}

@@ -7,6 +7,7 @@ import (
 	"path"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"code.cloudfoundry.org/cli/cf/errors"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 var validRequest = out.Request{
@@ -21,7 +22,7 @@ var validRequest = out.Request{
 		ManifestPath: "manifest.yml",
 		AppPath:      "",
 		TestDomain:   "kehe.com",
-		Command:      "halfpipe-push",
+		Command:      halfpipe_cf_plugin.PUSH,
 		Vars: map[string]string{
 			"VAR2": "bb",
 			"VAR4": "cc",
@@ -43,7 +44,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 
 	_, err = NewPlan().Plan(out.Request{
 		Params: out.Params{
-			Command:      "halfpipe-push",
+			Command:      halfpipe_cf_plugin.PUSH,
 			ManifestPath: "f",
 			AppPath:      "",
 			TestDomain:   "a",
@@ -121,7 +122,7 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 			ManifestPath: "manifest.yml",
 			AppPath:      "",
 			TestDomain:   "kehe.com",
-			Command:      "halfpipe-promote",
+			Command:      halfpipe_cf_plugin.PROMOTE,
 			Vars: map[string]string{
 				"VAR2": "bb",
 				"VAR4": "cc",

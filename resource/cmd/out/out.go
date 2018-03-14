@@ -12,6 +12,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/color"
 	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
 	"fmt"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 func main() {
@@ -36,7 +37,7 @@ func main() {
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")
-	case "halfpipe-push", "halfpipe-promote":
+	case halfpipe_cf_plugin.PUSH, halfpipe_cf_plugin.PROMOTE:
 		p, err = resource_plan.NewPlan().Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))

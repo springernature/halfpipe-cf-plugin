@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"errors"
 	"path"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) (error) {
@@ -90,7 +91,7 @@ func (p planner) Plan(request out.Request, concourseRoot string) (pl plan.Plan, 
 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
 
-	if request.Params.Command == "halfpipe-push" {
+	if request.Params.Command == halfpipe_cf_plugin.PUSH {
 		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
 			return
 		}

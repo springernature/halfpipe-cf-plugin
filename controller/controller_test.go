@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"code.cloudfoundry.org/cli/plugin/models"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 type MockPlan struct {
@@ -27,7 +28,7 @@ func (MockAppsGetter) GetApps() ([]plugin_models.GetAppsModel, error) {
 
 func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 	expectedError := errors.New("blurgh")
-	command := "halfpipe-push"
+	command := halfpipe_cf_plugin.PUSH
 
 	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
@@ -39,7 +40,7 @@ func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 }
 
 func TestControllerReturnsErrorForBadManifest(t *testing.T) {
-	command := "halfpipe-push"
+	command := halfpipe_cf_plugin.PUSH
 
 	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
@@ -60,10 +61,9 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 }
 
 func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
-	command := "halfpipe-push"
 	expectedErr := errors.New("Meehp")
 
-	controller := NewController(command, "", "", "", MockAppsGetter{})
+	controller := NewController(halfpipe_cf_plugin.PUSH, "", "", "", MockAppsGetter{})
 	controller.pushPlan = MockPlan{error: expectedErr}
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{{}}, nil
@@ -92,10 +92,9 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 }
 
 func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
-	command := "halfpipe-push"
 	expectedPlan := plan.Plan{}
 
-	controller := NewController(command, "", "", "", MockAppsGetter{})
+	controller := NewController(halfpipe_cf_plugin.PUSH, "", "", "", MockAppsGetter{})
 	controller.pushPlan = MockPlan{plan: expectedPlan}
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{{}}, nil
