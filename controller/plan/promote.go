@@ -8,7 +8,6 @@ import (
 
 type promote struct {
 	testDomain string
-	appsGetter AppsGetter
 }
 
 func NewPromote(testDomain string) promote {
@@ -21,10 +20,8 @@ func (p promote) GetPlan(application manifest.Application) (plan Plan, err error
 	candidateAppName := fmt.Sprintf("%s-CANDIDATE", application.Name)
 
 	plan = append(plan, addProdRoutes(application, candidateAppName)...)
-	plan = append(plan, removeTestRoute(application, candidateAppName, p.testDomain))
-	plan = append(plan,
-		NewCfCommand("rename", candidateAppName, application.Name),
-	)
+	plan = append(plan, removeTestRoute(candidateAppName, p.testDomain))
+	plan = append(plan, renameCandidate(application, candidateAppName))
 	return
 }
 
@@ -42,8 +39,10 @@ func addProdRoutes(application manifest.Application, candidateAppName string) (c
 	return
 }
 
-func removeTestRoute(application manifest.Application, candidateAppName string, testDomain string) Command {
-	return NewCfCommand(
-		"unmap-route", candidateAppName,
-		testDomain, "-n", candidateAppName)
+func removeTestRoute(candidateAppName string, testDomain string) Command {
+	return NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", candidateAppName)
+}
+
+func renameCandidate(application manifest.Application, candidateAppName string) Command {
+	return NewCfCommand("rename", candidateAppName, application.Name)
 }
