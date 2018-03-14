@@ -5,14 +5,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"strings"
 )
 
 func TestGivesBackAPushPlan(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
 	}
-	expectedApplicationName := strings.Join([]string{application.Name, "CANDIDATE"}, "-")
+	expectedApplicationName := createCandidateAppName(application.Name)
 
 	manifestPath := "path/to/manifest.yml"
 	appPath := "path/to/app.jar"

@@ -17,7 +17,7 @@ func TestGivesBackAPromotePlan(t *testing.T) {
 	}
 	testDomain := "domain.com"
 
-	candidateAppName := "my-app-CANDIDATE"
+	candidateAppName := createCandidateAppName(application.Name)
 	expectedPlan := Plan{
 
 		NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),

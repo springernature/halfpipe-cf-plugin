@@ -2,7 +2,6 @@ package plan
 
 import (
 	"code.cloudfoundry.org/cli/util/manifest"
-	"strings"
 )
 
 type push struct {
@@ -12,7 +11,7 @@ type push struct {
 }
 
 func (p push) GetPlan(application manifest.Application) (plan Plan, err error) {
-	candidateName := strings.Join([]string{application.Name, "CANDIDATE"}, "-")
+	candidateName := createCandidateAppName(application.Name)
 
 	command := NewCfCommand(
 		"push",

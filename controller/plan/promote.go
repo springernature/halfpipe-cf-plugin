@@ -2,7 +2,6 @@ package plan
 
 import (
 	"code.cloudfoundry.org/cli/util/manifest"
-	"fmt"
 	"strings"
 )
 
@@ -17,7 +16,7 @@ func NewPromote(testDomain string) promote {
 }
 
 func (p promote) GetPlan(application manifest.Application) (plan Plan, err error) {
-	candidateAppName := fmt.Sprintf("%s-CANDIDATE", application.Name)
+	candidateAppName := createCandidateAppName(application.Name)
 
 	plan = append(plan, addProdRoutes(application, candidateAppName)...)
 	plan = append(plan, removeTestRoute(candidateAppName, p.testDomain))
