@@ -21,11 +21,16 @@ func NewCfCommand(args ...string) Command {
 }
 
 func (c Command) String() string {
-	// For now just a dirty replace of whatever comes after "-p " to hide cf password from
-	// concourse console output
-	cfLoginPasswordRegex := regexp.MustCompile(`-p ([a-zA-Z0-9_-]+)`)
-	withPasswordRemoved := cfLoginPasswordRegex.ReplaceAllLiteralString(strings.Join(c.args, " "), "-p ********")
-	return fmt.Sprintf("%s %s", c.command, withPasswordRemoved)
+	var commandArgs = strings.Join(c.args, " ")
+
+	if strings.HasPrefix(commandArgs, "login") {
+		// If the command is login, a dirty replace of whatever comes after "-p "
+		// to hide cf password from concourse console output
+		cfLoginPasswordRegex := regexp.MustCompile(`-p ([a-zA-Z0-9_-]+)`)
+		commandArgs = cfLoginPasswordRegex.ReplaceAllLiteralString(commandArgs, "-p ********")
+	}
+
+	return fmt.Sprintf("%s %s", c.command, commandArgs)
 }
 
 type Plan []Command
