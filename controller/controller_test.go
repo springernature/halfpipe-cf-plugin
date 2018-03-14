@@ -7,6 +7,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
 	"github.com/stretchr/testify/assert"
 	"code.cloudfoundry.org/cli/util/manifest"
+	"code.cloudfoundry.org/cli/plugin/models"
 )
 
 type MockPlan struct {
@@ -18,11 +19,17 @@ func (m MockPlan) GetPlan(application manifest.Application) (plan.Plan, error) {
 	return m.plan, m.error
 }
 
+type MockAppsGetter struct {}
+
+func (MockAppsGetter) GetApps() ([]plugin_models.GetAppsModel, error) {
+	panic("implement me")
+}
+
 func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 	expectedError := errors.New("blurgh")
 	command := "halfpipe-push"
 
-	controller := NewController(command, "", "", "")
+	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{}, expectedError
 	}
@@ -34,7 +41,7 @@ func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 	command := "halfpipe-push"
 
-	controller := NewController(command, "", "", "")
+	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{}, nil
 	}
@@ -56,7 +63,7 @@ func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	command := "halfpipe-push"
 	expectedErr := errors.New("Meehp")
 
-	controller := NewController(command, "", "", "")
+	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.pushPlan = MockPlan{error: expectedErr}
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{{}}, nil
@@ -73,7 +80,7 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 
 	expectedErr := ErrUnknownCommand(command)
 
-	controller := NewController(command, "", "", "")
+	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{{}}, nil
 	}
@@ -88,7 +95,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 	command := "halfpipe-push"
 	expectedPlan := plan.Plan{}
 
-	controller := NewController(command, "", "", "")
+	controller := NewController(command, "", "", "", MockAppsGetter{})
 	controller.pushPlan = MockPlan{plan: expectedPlan}
 	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{{}}, nil

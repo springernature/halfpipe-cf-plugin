@@ -10,6 +10,8 @@ import (
 	"log"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out/resource_plan"
 	"github.com/springernature/halfpipe-cf-plugin/color"
+	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
+	"fmt"
 )
 
 func main() {
@@ -30,7 +32,16 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	p, err := resource_plan.NewPush().Plan(request, concourseRoot)
+	var p plan.Plan
+	switch request.Params.Command {
+	case "":
+		panic("params.command must not be empty")
+	case "halfpipe-push", "halfpipe-promote":
+		p, err = resource_plan.NewPlan().Plan(request, concourseRoot)
+	default:
+		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))
+	}
+
 	if err != nil {
 		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
@@ -39,7 +50,6 @@ func main() {
 	if err = p.Execute(out.NewCliExecutor(), logger, color.ResourcePlanColor); err != nil {
 		os.Exit(1)
 	}
-
 
 	response := out.Response{
 		Version: out.Version{

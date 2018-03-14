@@ -38,7 +38,7 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 
 	manifestPath, appPath, testDomain := parseArgs(args)
 
-	p, err := controller.NewController(args[0], manifestPath, appPath, testDomain).GetPlan()
+	p, err := controller.NewController(args[0], manifestPath, appPath, testDomain, cliConnection).GetPlan()
 	if err != nil {
 		logger.Println(color.ErrColor.Sprint(err))
 		syscall.Exit(1)
@@ -57,6 +57,9 @@ func (Halfpipe) GetMetadata() plugin.PluginMetadata {
 		Commands: []plugin.Command{
 			{
 				Name: "halfpipe-push",
+			},
+			{
+				Name: "halfpipe-promote",
 			},
 		},
 	}

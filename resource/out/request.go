@@ -14,6 +14,7 @@ type Source struct {
 }
 
 type Params struct {
+	Command      string
 	ManifestPath string
 	AppPath      string
 	TestDomain   string

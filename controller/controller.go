@@ -15,17 +15,20 @@ var ErrUnknownCommand = func(cmd string) error {
 var ErrBadManifest = errors.New("Application manifest must contain exactly one application")
 
 type controller struct {
-	command  string
-	pushPlan plan.Planner
+	command     string
+	pushPlan    plan.Planner
+	promotePlan plan.Planner
 
 	manifestPath   string
 	manifestReader func(pathToManifest string) ([]manifest.Application, error)
+	appsGetter     plan.AppsGetter
 }
 
-func NewController(command string, manifestPath string, appPath string, testDomain string) controller {
+func NewController(command string, manifestPath string, appPath string, testDomain string, appsGetter plan.AppsGetter) controller {
 	return controller{
 		command:        command,
 		pushPlan:       plan.NewPush(manifestPath, appPath, testDomain),
+		promotePlan:    plan.NewPromote(testDomain),
 		manifestPath:   manifestPath,
 		manifestReader: manifest.ReadAndMergeManifests,
 	}
@@ -45,6 +48,8 @@ func (c controller) GetPlan() (commands plan.Plan, err error) {
 	switch c.command {
 	case "halfpipe-push":
 		commands, err = c.pushPlan.GetPlan(apps[0])
+	case "halfpipe-promote":
+		commands, err = c.promotePlan.GetPlan(apps[0])
 	default:
 		err = ErrUnknownCommand(c.command)
 	}

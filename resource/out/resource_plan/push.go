@@ -21,13 +21,13 @@ var NewErrEmptySourceValue = func(fieldName string) (error) {
 	return errors.New(errorMsg)
 }
 
-type push struct {
+type planner struct {
 	manifestReader func(pathToManifest string) ([]manifest.Application, error)
 	manifestWriter func(application manifest.Application, filePath string) error
 }
 
-func NewPush() push {
-	return push{
+func NewPlan() planner {
+	return planner{
 		manifestReader: manifest.ReadAndMergeManifests,
 		manifestWriter: manifest.WriteApplicationManifest,
 	}
@@ -56,6 +56,10 @@ func check(request out.Request) (err error) {
 		return
 	}
 
+	if err = checkParamField("command", request.Params.Command); err != nil {
+		return
+	}
+
 	if err = checkSourceField("space", request.Source.Space); err != nil {
 		return
 	}
@@ -79,15 +83,17 @@ func check(request out.Request) (err error) {
 	return
 }
 
-func (p push) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err error) {
+func (p planner) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err error) {
 	if err = check(request); err != nil {
 		return
 	}
 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
 
-	if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
-		return
+	if request.Params.Command == "halfpipe-push" {
+		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
+			return
+		}
 	}
 
 	pl = plan.Plan{
@@ -97,7 +103,7 @@ func (p push) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err
 			"-p", request.Source.Password,
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
-		plan.NewCfCommand("halfpipe-push",
+		plan.NewCfCommand(request.Params.Command,
 			"-manifestPath", fullManifestPath,
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,
@@ -107,7 +113,7 @@ func (p push) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err
 	return
 }
 
-func (p push) updateManifestWithVars(manifestPath string, vars map[string]string) (err error) {
+func (p planner) updateManifestWithVars(manifestPath string, vars map[string]string) (err error) {
 	if len(vars) > 0 {
 		apps, e := p.manifestReader(manifestPath)
 		if e != nil {
