@@ -1,7 +1,7 @@
 package resource_plan
 
 import (
-	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"fmt"
@@ -84,7 +84,7 @@ func check(request out.Request) (err error) {
 	return
 }
 
-func (p planner) Plan(request out.Request, concourseRoot string) (pl plan.Plan, err error) {
+func (p planner) Plan(request out.Request, concourseRoot string) (pl plans.Plan, err error) {
 	if err = check(request); err != nil {
 		return
 	}
@@ -97,14 +97,14 @@ func (p planner) Plan(request out.Request, concourseRoot string) (pl plan.Plan, 
 		}
 	}
 
-	pl = plan.Plan{
-		plan.NewCfCommand("login",
+	pl = plans.Plan{
+		plans.NewCfCommand("login",
 			"-a", request.Source.Api,
 			"-u", request.Source.Username,
 			"-p", request.Source.Password,
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
-		plan.NewCfCommand(request.Params.Command,
+		plans.NewCfCommand(request.Params.Command,
 			"-manifestPath", fullManifestPath,
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,

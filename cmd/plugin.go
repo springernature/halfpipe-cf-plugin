@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/springernature/halfpipe-cf-plugin/controller"
 	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 type Halfpipe struct{}
@@ -39,7 +39,7 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 
 	manifestPath, appPath, testDomain := parseArgs(args)
 
-	p, err := controller.NewController(command, manifestPath, appPath, testDomain, cliConnection).GetPlan()
+	p, err := plan.NewPlanner(manifestPath, appPath, testDomain, cliConnection).GetPlan(command)
 	if err != nil {
 		logger.Println(err)
 		syscall.Exit(1)

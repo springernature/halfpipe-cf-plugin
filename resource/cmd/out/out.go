@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"log"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out/resource_plan"
-	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"fmt"
 	"github.com/springernature/halfpipe-cf-plugin"
 )
@@ -32,7 +32,7 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	var p plan.Plan
+	var p plans.Plan
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")

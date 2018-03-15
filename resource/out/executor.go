@@ -2,14 +2,14 @@ package out
 
 import (
 	"os/exec"
-	"github.com/springernature/halfpipe-cf-plugin/controller/plan"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"os"
 )
 
 type cliExecutor struct {
 }
 
-func NewCliExecutor() plan.Executor {
+func NewCliExecutor() plans.Executor {
 	return cliExecutor{}
 }
 

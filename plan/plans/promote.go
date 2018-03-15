@@ -1,4 +1,4 @@
-package plan
+package plans
 
 import (
 	"code.cloudfoundry.org/cli/util/manifest"
