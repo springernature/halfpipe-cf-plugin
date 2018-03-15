@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
+	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
 func main() {
@@ -37,7 +37,7 @@ func main() {
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")
-	case types.PUSH, types.PROMOTE, types.DELETE:
+	case config.PUSH, config.PROMOTE, config.DELETE:
 		p, err = resource.NewPlanner(manifest.ReadAndMergeManifests, manifest.WriteApplicationManifest).Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))

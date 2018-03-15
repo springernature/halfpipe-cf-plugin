@@ -4,7 +4,7 @@ COPY . /go/src/github.com/springernature/halfpipe-cf-plugin
 WORKDIR /go/src/github.com/springernature/halfpipe-cf-plugin
 
 ENV CGO_ENABLED 0
-RUN go build cmd/plugin/plugin.go
+RUN go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" cmd/plugin/plugin.go
 
 ENV CF_TAR_URL "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=6.35.0&source=github-rel"
 RUN wget -qO- ${CF_TAR_URL} | tar xvz -C /bin > /dev/null

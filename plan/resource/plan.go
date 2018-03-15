@@ -6,8 +6,8 @@ import (
 	"path"
 
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -95,7 +95,7 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
 
-	if request.Params.Command == types.PUSH {
+	if request.Params.Command == config.PUSH {
 		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
 			return
 		}

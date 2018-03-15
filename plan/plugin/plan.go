@@ -5,8 +5,8 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
 var ErrUnknownCommand = func(cmd string) error {
@@ -28,7 +28,7 @@ type Plan interface {
 type pluginPlan struct {
 	pushPlan       Planner
 	promotePlan    Planner
-	deletePlan 	   Planner
+	deletePlan     Planner
 	manifestReader ManifestReader
 }
 
@@ -53,11 +53,11 @@ func (c pluginPlan) GetPlan(request Request) (commands plan.Plan, err error) {
 	}
 
 	switch request.Command {
-	case types.PUSH:
+	case config.PUSH:
 		commands, err = c.pushPlan.GetPlan(apps[0], request)
-	case types.PROMOTE:
+	case config.PROMOTE:
 		commands, err = c.promotePlan.GetPlan(apps[0], request)
-	case types.DELETE:
+	case config.DELETE:
 		commands, err = c.deletePlan.GetPlan(apps[0], request)
 	default:
 		err = ErrUnknownCommand(request.Command)

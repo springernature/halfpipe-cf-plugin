@@ -63,7 +63,6 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 	assert.Equal(t, expectedPlan, commands)
 }
 
-
 func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",

@@ -8,8 +8,8 @@ import (
 
 	cfPlugin "code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan/plugin"
+	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
 type Halfpipe struct{}
@@ -55,6 +55,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(1)
 	}
 
+	logger.Printf("Plugin built from '%s'", config.SHA)
 	logger.Println(p)
 	if err = p.Execute(cliConnection, logger); err != nil {
 		logger.Println(err)
@@ -67,13 +68,13 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 		Name: "halfpipe",
 		Commands: []cfPlugin.Command{
 			{
-				Name: types.PUSH,
+				Name: config.PUSH,
 			},
 			{
-				Name: types.PROMOTE,
+				Name: config.PROMOTE,
 			},
 			{
-				Name: types.DELETE,
+				Name: config.DELETE,
 			},
 		},
 	}

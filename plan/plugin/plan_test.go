@@ -5,9 +5,9 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
+	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
 type mockPlanner struct {
@@ -47,7 +47,7 @@ func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 
 	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithError)
 
-	_, err := controller.GetPlan(Request{Command: types.PUSH})
+	_, err := controller.GetPlan(Request{Command: config.PUSH})
 	assert.Equal(t, expectedError, err)
 }
 
@@ -58,7 +58,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 
 	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithEmptyManifest)
 
-	_, err := controller.GetPlan(Request{Command: types.PUSH})
+	_, err := controller.GetPlan(Request{Command: config.PUSH})
 	assert.Equal(t, ErrBadManifest, err)
 
 	///
@@ -70,7 +70,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 		}, nil
 	}
 	controller = NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithManifestWithTwoApps)
-	_, err = controller.GetPlan(Request{Command: types.PROMOTE})
+	_, err = controller.GetPlan(Request{Command: config.PROMOTE})
 	assert.Equal(t, ErrBadManifest, err)
 }
 
@@ -78,7 +78,7 @@ func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	expectedErr := errors.New("Meehp")
 
 	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), newMockPlanner(), manifestReader)
-	_, err := controller.GetPlan(Request{Command: types.PUSH})
+	_, err := controller.GetPlan(Request{Command: config.PUSH})
 
 	assert.Equal(t, expectedErr, err)
 }
@@ -101,7 +101,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 
 	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), manifestReader)
 
-	commands, err := controller.GetPlan(Request{Command: types.PUSH})
+	commands, err := controller.GetPlan(Request{Command: config.PUSH})
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)

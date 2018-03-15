@@ -1,4 +1,4 @@
-package types
+package config
 
 const PUSH = "halfpipe-push"
 const PROMOTE = "halfpipe-promote"
