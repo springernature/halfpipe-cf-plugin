@@ -8,6 +8,11 @@ import (
 type Plan []Command
 
 func (p Plan) String() (s string) {
+	if p.IsEmpty() {
+		s += "Nothing to do!"
+		return
+	}
+
 	s += "Planned execution\n"
 	for _, command := range p {
 		s += fmt.Sprintf("\t* %s\n", command)
@@ -26,4 +31,8 @@ func (p Plan) Execute(executor Executor, logger *log.Logger) (err error) {
 		logger.Println()
 	}
 	return
+}
+
+func (p Plan) IsEmpty() bool {
+	return len(p) == 0
 }
