@@ -48,7 +48,7 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	if err = p.Execute(resource.NewCliExecutor(), logger); err != nil {
+	if err = p.Execute(resource.NewCFCliExecutor(), logger); err != nil {
 		os.Exit(1)
 	}
 
