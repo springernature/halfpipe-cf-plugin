@@ -30,7 +30,8 @@ func parseArgs(args []string) (manifestPath string, appPath string, testDomain s
 }
 
 func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
-	if args[0] == "CLI-MESSAGE-UNINSTALL" {
+	command := args[0]
+	if command == "CLI-MESSAGE-UNINSTALL" {
 		syscall.Exit(0)
 	}
 
@@ -38,7 +39,7 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 
 	manifestPath, appPath, testDomain := parseArgs(args)
 
-	p, err := controller.NewController(args[0], manifestPath, appPath, testDomain, cliConnection).GetPlan()
+	p, err := controller.NewController(command, manifestPath, appPath, testDomain, cliConnection).GetPlan()
 	if err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
