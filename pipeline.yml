@@ -1,0 +1,87 @@
+# Generated using halfpipe cli version 1.12.0
+resources:
+- name: halfpipe-cf-plugin
+  type: git
+  source:
+    private_key: ((github.private_key))
+    uri: git@github.com:springernature/halfpipe-cf-plugin.git
+
+- name: docker-registry
+  type: docker-image
+  source:
+    password: ((docker-hub-pe.password))
+    repository: platformengineering/cf-resource
+    username: platformengineering
+
+jobs:
+- name: run test.sh
+  serial: true
+  plan:
+  - get: halfpipe-cf-plugin
+    trigger: true
+  - task: run
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: golang
+          tag: 1.10.0-alpine3.7
+      params:
+        RUNNING_IN_CI: "true"
+      run:
+        path: /bin/sh
+        args:
+        - -ec
+        - ./test.sh
+        dir: halfpipe-cf-plugin
+      inputs:
+      - name: halfpipe-cf-plugin
+
+- name: Push dev docker image
+  serial: true
+  plan:
+  - get: halfpipe-cf-plugin
+    passed:
+    - run test.sh
+    trigger: true
+  - put: docker-registry
+    params:
+      build: halfpipe-cf-plugin
+
+- name: Run smoke tests in dev docker image
+  serial: true
+  plan:
+  - get: docker-registry
+    trigger: true
+  - get: halfpipe-cf-plugin
+    passed:
+    - Push dev docker image
+  - task: run
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: platformengineering/cf-resource
+      run:
+        path: /bin/sh
+        args:
+        - -ec
+        - |
+          exit 0
+        dir: halfpipe-cf-plugin
+      inputs:
+      - name: halfpipe-cf-plugin
+
+- name: Tag docker image as stable
+  serial: true
+  plan:
+  - get: halfpipe-cf-plugin
+    passed:
+    - Run smoke tests in dev docker image
+    trigger: true
+  - put: docker-registry
+    params:
+      build: halfpipe-cf-plugin
+      tag: halfpipe-cf-plugin/.docker-stable-tag
