@@ -3,8 +3,9 @@ package plans
 import (
 	"fmt"
 	"log"
-	"strings"
 	"regexp"
+	"strings"
+
 	"code.cloudfoundry.org/cli/util/manifest"
 )
 

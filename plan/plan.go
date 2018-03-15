@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/cf/errors"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 )
 
 var ErrUnknownCommand = func(cmd string) error {

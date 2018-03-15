@@ -1,13 +1,14 @@
 package resource_plan
 
 import (
+	"path"
 	"testing"
+
+	"code.cloudfoundry.org/cli/cf/errors"
+	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out"
 	"github.com/stretchr/testify/assert"
-	"path"
-	"code.cloudfoundry.org/cli/util/manifest"
-	"code.cloudfoundry.org/cli/cf/errors"
-	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 var validRequest = out.Request{
@@ -109,7 +110,6 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 		return nil
 	}
 
-
 	validPromoteRequest := out.Request{
 		Source: out.Source{
 			Api:      "a",
@@ -165,7 +165,6 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 		actualManifest = application
 		return nil
 	}
-
 
 	p, err := push.Plan(validRequest, "")
 

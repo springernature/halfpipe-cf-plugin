@@ -1,8 +1,9 @@
 package plans
 
 import (
-	"code.cloudfoundry.org/cli/util/manifest"
 	"strings"
+
+	"code.cloudfoundry.org/cli/util/manifest"
 )
 
 type promote struct{}

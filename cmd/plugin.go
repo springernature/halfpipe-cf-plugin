@@ -7,10 +7,10 @@ import (
 	"syscall"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
-	"code.cloudfoundry.org/cli/util/manifest"
 )
 
 type Halfpipe struct{}

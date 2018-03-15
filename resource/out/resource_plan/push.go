@@ -1,23 +1,24 @@
 package resource_plan
 
 import (
+	"errors"
+	"fmt"
+	"path"
+
+	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"github.com/springernature/halfpipe-cf-plugin/resource/out"
-	"code.cloudfoundry.org/cli/util/manifest"
-	"fmt"
-	"errors"
-	"path"
-	"github.com/springernature/halfpipe-cf-plugin"
 )
 
-var NewErrEmptyParamValue = func(fieldName string) (error) {
+var NewErrEmptyParamValue = func(fieldName string) error {
 	errorMsg := fmt.Sprintf("Field params.%s must not be empty!", fieldName)
 	return errors.New(errorMsg)
 }
 
 type ErrEmptySourceValue error
 
-var NewErrEmptySourceValue = func(fieldName string) (error) {
+var NewErrEmptySourceValue = func(fieldName string) error {
 	errorMsg := fmt.Sprintf("Field source.%s must not be empty!", fieldName)
 	return errors.New(errorMsg)
 }

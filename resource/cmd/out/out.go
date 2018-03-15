@@ -1,17 +1,18 @@
 package main
 
 import (
-	"os"
 	"encoding/json"
-	"github.com/springernature/halfpipe-cf-plugin/resource/out"
-	"time"
-	"io/ioutil"
-	"syscall"
-	"log"
-	"github.com/springernature/halfpipe-cf-plugin/resource/out/resource_plan"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"syscall"
+	"time"
+
 	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
+	"github.com/springernature/halfpipe-cf-plugin/resource/out"
+	"github.com/springernature/halfpipe-cf-plugin/resource/out/resource_plan"
 )
 
 func main() {

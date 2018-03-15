@@ -1,9 +1,10 @@
 package out
 
 import (
-	"os/exec"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"os"
+	"os/exec"
+
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 )
 
 type cliExecutor struct {

@@ -3,8 +3,8 @@ package plans
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGivesBackAPromotePlan(t *testing.T) {

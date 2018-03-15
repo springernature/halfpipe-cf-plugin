@@ -3,7 +3,7 @@ package out
 import "time"
 
 type Response struct {
-	Version Version
+	Version  Version
 	Metadata []MetadataPair
 }
 
