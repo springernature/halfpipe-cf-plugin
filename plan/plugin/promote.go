@@ -29,11 +29,11 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 
 	plan = append(plan, addProdRoutes(application, candidateAppName)...)
 	plan = append(plan, removeTestRoute(candidateAppName, request.TestDomain))
+	plan = append(plan, renameOlderApp(apps, createOldAppName(application.Name), application.Name)...)
 	plan = append(plan, renameOldAppAndStopIt(apps, application)...)
 	plan = append(plan, renameCandidate(application, candidateAppName))
 	return
 }
-
 func addProdRoutes(application manifest.Application, candidateAppName string) (commands []plan.Command) {
 	for _, route := range application.Routes {
 		parts := strings.Split(route, ".")
@@ -56,19 +56,21 @@ func renameCandidate(application manifest.Application, candidateAppName string) 
 }
 
 func renameOldAppAndStopIt(apps []plugin_models.GetAppsModel, currentApp manifest.Application) (pl []plan.Command) {
-	if hasOldApp(apps, currentApp) {
-		oldAppName := createOldAppName(currentApp.Name)
-		pl = append(pl, plan.NewCfCommand("rename", currentApp.Name, oldAppName))
-		pl = append(pl, plan.NewCfCommand("stop", oldAppName))
+	for _, app := range apps {
+		if app.Name == currentApp.Name {
+			oldAppName := createOldAppName(currentApp.Name)
+			pl = append(pl, plan.NewCfCommand("rename", currentApp.Name, oldAppName))
+			pl = append(pl, plan.NewCfCommand("stop", oldAppName))
+		}
 	}
 	return
 }
 
-func hasOldApp(apps []plugin_models.GetAppsModel, currentApp manifest.Application) bool {
+func renameOlderApp(apps []plugin_models.GetAppsModel, oldAppName string, appName string) (pl []plan.Command) {
 	for _, app := range apps {
-		if app.Name == currentApp.Name {
-			return true
+		if app.Name == oldAppName {
+			pl = append(pl, plan.NewCfCommand("rename", app.Name, createDeleteName(appName)))
 		}
 	}
-	return false
+	return
 }

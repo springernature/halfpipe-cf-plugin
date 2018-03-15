@@ -11,3 +11,7 @@ func createCandidateAppName(appName string) string {
 func createOldAppName(appName string) string {
 	return strings.Join([]string{appName, "OLD"}, "-")
 }
+
+func createDeleteName(appName string) string {
+	return strings.Join([]string{appName, "DELETE"}, "-")
+}
