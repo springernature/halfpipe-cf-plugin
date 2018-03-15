@@ -1,19 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
+	"log"
 )
 
 func main() {
 	// Just echo stdin to stdout.
+	logger := log.New(os.Stderr, "", 0)
 
-	indata, err := ioutil.ReadAll(os.Stdin)
+	inData, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		logger.Println(err.Error())
 		os.Exit(1)
 	}
 
-	fmt.Fprint(os.Stdout, string(indata))
+	logger.SetOutput(os.Stdout)
+	logger.Println(string(inData))
 }

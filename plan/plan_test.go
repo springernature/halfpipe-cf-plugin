@@ -47,7 +47,7 @@ func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 
 	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithError)
 
-	_, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
+	_, err := controller.GetPlan(plans.PluginRequest{Command: types.PUSH})
 	assert.Equal(t, expectedError, err)
 }
 
@@ -58,7 +58,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 
 	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithEmptyManifest)
 
-	_, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
+	_, err := controller.GetPlan(plans.PluginRequest{Command: types.PUSH})
 	assert.Equal(t, ErrBadManifest, err)
 
 	///
@@ -70,7 +70,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 		}, nil
 	}
 	controller = NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithManifestWithTwoApps)
-	_, err = controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PROMOTE})
+	_, err = controller.GetPlan(plans.PluginRequest{Command: types.PROMOTE})
 	assert.Equal(t, ErrBadManifest, err)
 }
 
@@ -78,7 +78,7 @@ func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	expectedErr := errors.New("Meehp")
 
 	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), manifestReader)
-	_, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
+	_, err := controller.GetPlan(plans.PluginRequest{Command: types.PUSH})
 
 	assert.Equal(t, expectedErr, err)
 }
@@ -101,7 +101,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 
 	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), manifestReader)
 
-	commands, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
+	commands, err := controller.GetPlan(plans.PluginRequest{Command: types.PUSH})
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)

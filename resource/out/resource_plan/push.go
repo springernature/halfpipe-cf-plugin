@@ -78,7 +78,7 @@ func check(request out.Request) (err error) {
 		return
 	}
 
-	if err = checkSourceField("api", request.Source.Api); err != nil {
+	if err = checkSourceField("api", request.Source.API); err != nil {
 		return
 	}
 
@@ -92,7 +92,7 @@ func (p planner) Plan(request out.Request, concourseRoot string) (pl plans.Plan,
 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
 
-	if request.Params.Command == halfpipe_cf_plugin.PUSH {
+	if request.Params.Command == types.PUSH {
 		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
 			return
 		}
@@ -100,7 +100,7 @@ func (p planner) Plan(request out.Request, concourseRoot string) (pl plans.Plan,
 
 	pl = plans.Plan{
 		plans.NewCfCommand("login",
-			"-a", request.Source.Api,
+			"-a", request.Source.API,
 			"-u", request.Source.Username,
 			"-p", request.Source.Password,
 			"-o", request.Source.Org,

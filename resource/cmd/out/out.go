@@ -37,7 +37,7 @@ func main() {
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")
-	case halfpipe_cf_plugin.PUSH, halfpipe_cf_plugin.PROMOTE:
+	case types.PUSH, types.PROMOTE:
 		p, err = resource_plan.NewPlan().Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))
@@ -57,10 +57,12 @@ func main() {
 			Timestamp: time.Now(),
 		},
 		Metadata: []out.MetadataPair{
-			{Name: "Api", Value: request.Source.Api},
+			{Name: "Api", Value: request.Source.API},
 			{Name: "Org", Value: request.Source.Org},
 			{Name: "Space", Value: request.Source.Space},
 		},
 	}
-	json.NewEncoder(os.Stdout).Encode(response)
+	if err = json.NewEncoder(os.Stdout).Encode(response); err != nil {
+		panic(err)
+	}
 }

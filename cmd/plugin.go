@@ -15,10 +15,6 @@ import (
 
 type Halfpipe struct{}
 
-type Options struct {
-	ManifestPath string
-}
-
 func parseArgs(args []string) (manifestPath string, appPath string, testDomain string) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
@@ -71,10 +67,10 @@ func (Halfpipe) GetMetadata() plugin.PluginMetadata {
 		Name: "halfpipe",
 		Commands: []plugin.Command{
 			{
-				Name: halfpipe_cf_plugin.PUSH,
+				Name: types.PUSH,
 			},
 			{
-				Name: halfpipe_cf_plugin.PROMOTE,
+				Name: types.PROMOTE,
 			},
 		},
 	}

@@ -13,7 +13,7 @@ import (
 
 var validRequest = out.Request{
 	Source: out.Source{
-		Api:      "a",
+		API:      "a",
 		Org:      "b",
 		Space:    "c",
 		Username: "d",
@@ -23,7 +23,7 @@ var validRequest = out.Request{
 		ManifestPath: "manifest.yml",
 		AppPath:      "",
 		TestDomain:   "kehe.com",
-		Command:      halfpipe_cf_plugin.PUSH,
+		Command:      types.PUSH,
 		Vars: map[string]string{
 			"VAR2": "bb",
 			"VAR4": "cc",
@@ -34,7 +34,7 @@ var validRequest = out.Request{
 func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 	_, err := NewPlan().Plan(out.Request{
 		Source: out.Source{
-			Api:      "a",
+			API:      "a",
 			Org:      "b",
 			Space:    "c",
 			Username: "d",
@@ -45,7 +45,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 
 	_, err = NewPlan().Plan(out.Request{
 		Params: out.Params{
-			Command:      halfpipe_cf_plugin.PUSH,
+			Command:      types.PUSH,
 			ManifestPath: "f",
 			AppPath:      "",
 			TestDomain:   "a",
@@ -112,7 +112,7 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 
 	validPromoteRequest := out.Request{
 		Source: out.Source{
-			Api:      "a",
+			API:      "a",
 			Org:      "b",
 			Space:    "c",
 			Username: "d",
@@ -122,7 +122,7 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 			ManifestPath: "manifest.yml",
 			AppPath:      "",
 			TestDomain:   "kehe.com",
-			Command:      halfpipe_cf_plugin.PROMOTE,
+			Command:      types.PROMOTE,
 			Vars: map[string]string{
 				"VAR2": "bb",
 				"VAR4": "cc",

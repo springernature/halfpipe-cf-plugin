@@ -6,7 +6,7 @@ type Request struct {
 }
 
 type Source struct {
-	Api      string
+	API      string
 	Org      string
 	Space    string
 	Username string

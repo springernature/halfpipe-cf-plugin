@@ -69,7 +69,7 @@ func TestPlan_ExecutePassesOnErrorIfItHappensInTheMiddleOfThePlan(t *testing.T) 
 
 	err := p.Execute(MockExecutor{
 		func(args ...string) ([]string, error) {
-			numberOfCalls += 1
+			numberOfCalls++
 			if args[0] == "error" {
 				return []string{}, expectedError
 			}
@@ -93,7 +93,7 @@ func TestPlan_Execute(t *testing.T) {
 
 	err := p.Execute(MockExecutor{
 		func(args ...string) ([]string, error) {
-			numberOfCalls += 1
+			numberOfCalls++
 			return []string{}, nil
 		},
 	}, DevNullWriter)

@@ -15,7 +15,7 @@ func NewCliExecutor() plans.Executor {
 }
 
 func (c cliExecutor) CliCommand(args ...string) (out []string, err error) {
-	execCmd := exec.Command("cf", args...)
+	execCmd := exec.Command("cf", args...) // #nosec disables the gas warning for this line.
 	execCmd.Stdout = os.Stderr
 	execCmd.Stderr = os.Stderr
 

@@ -5,12 +5,12 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 var ErrUnknownCommand = func(cmd string) error {
-	return errors.New(fmt.Sprintf("Unknown command '%s'", cmd))
+	return fmt.Errorf("unknown command '%s'", cmd)
 }
 
 var ErrBadManifest = errors.New("Application manifest must contain exactly one application")
@@ -47,9 +47,9 @@ func (c planner) GetPlan(request plans.PluginRequest) (commands plans.Plan, err 
 	}
 
 	switch request.Command {
-	case halfpipe_cf_plugin.PUSH:
+	case types.PUSH:
 		commands, err = c.pushPlan.GetPlan(apps[0], request)
-	case halfpipe_cf_plugin.PROMOTE:
+	case types.PROMOTE:
 		commands, err = c.promotePlan.GetPlan(apps[0], request)
 	default:
 		err = ErrUnknownCommand(request.Command)

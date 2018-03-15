@@ -1,4 +1,4 @@
-package halfpipe_cf_plugin
+package types
 
 const PUSH = "halfpipe-push"
 const PROMOTE = "halfpipe-promote"
