@@ -4,31 +4,23 @@ import (
 	"code.cloudfoundry.org/cli/util/manifest"
 )
 
-type push struct {
-	manifestPath string
-	appPath      string
-	testDomain   string
-}
+type push struct{}
 
-func (p push) GetPlan(application manifest.Application) (plan Plan, err error) {
+func (p push) GetPlan(application manifest.Application, request PluginRequest) (plan Plan, err error) {
 	candidateName := createCandidateAppName(application.Name)
 
 	command := NewCfCommand(
 		"push",
 		candidateName,
-		"-f", p.manifestPath,
-		"-p", p.appPath,
+		"-f", request.ManifestPath,
+		"-p", request.AppPath,
 		"-n", candidateName,
-		"-d", p.testDomain,
+		"-d", request.TestDomain,
 	)
 	plan = append(plan, command)
 	return
 }
 
-func NewPush(manifestPath string, appPath string, testDomain string) push {
-	return push{
-		manifestPath,
-		appPath,
-		testDomain,
-	}
+func NewPush() Planner {
+	return push{}
 }

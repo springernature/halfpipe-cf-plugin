@@ -26,9 +26,11 @@ func TestGivesBackAPromotePlan(t *testing.T) {
 		NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
 	}
 
-	promote := NewPromote(testDomain)
+	promote := NewPromote()
 
-	commands, err := promote.GetPlan(application)
+	commands, err := promote.GetPlan(application, PluginRequest{
+		TestDomain: testDomain,
+	})
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)

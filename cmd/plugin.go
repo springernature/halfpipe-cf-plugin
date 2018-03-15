@@ -9,6 +9,8 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
+	"code.cloudfoundry.org/cli/util/manifest"
 )
 
 type Halfpipe struct{}
@@ -38,8 +40,20 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 	logger := log.New(os.Stdout, "", 0)
 
 	manifestPath, appPath, testDomain := parseArgs(args)
+	pluginRequest := plans.PluginRequest{
+		Command:      command,
+		ManifestPath: manifestPath,
+		AppPath:      appPath,
+		TestDomain:   testDomain,
+	}
 
-	p, err := plan.NewPlanner(manifestPath, appPath, testDomain, cliConnection).GetPlan(command)
+	planner := plan.NewPlanner(
+		plans.NewPush(),
+		plans.NewPromote(),
+		manifest.ReadAndMergeManifests,
+	)
+
+	p, err := planner.GetPlan(pluginRequest)
 	if err != nil {
 		logger.Println(err)
 		syscall.Exit(1)

@@ -5,8 +5,8 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin"
+	"code.cloudfoundry.org/cli/util/manifest"
 )
 
 var ErrUnknownCommand = func(cmd string) error {
@@ -15,26 +15,28 @@ var ErrUnknownCommand = func(cmd string) error {
 
 var ErrBadManifest = errors.New("Application manifest must contain exactly one application")
 
-type planner struct {
-	pushPlan    plans.Planner
-	promotePlan plans.Planner
+type ManifestReader func(pathToManifest string) ([]manifest.Application, error)
 
-	manifestPath   string
-	manifestReader func(pathToManifest string) ([]manifest.Application, error)
-	appsGetter     plans.AppsGetter
+type Plan interface {
+	GetPlan(request plans.PluginRequest) (commands plans.Plan, err error)
 }
 
-func NewPlanner(manifestPath string, appPath string, testDomain string, appsGetter plans.AppsGetter) planner {
+type planner struct {
+	pushPlan       plans.Planner
+	promotePlan    plans.Planner
+	manifestReader ManifestReader
+}
+
+func NewPlanner(pushPlan plans.Planner, promotePlan plans.Planner, manifestReader ManifestReader) Plan {
 	return planner{
-		pushPlan:       plans.NewPush(manifestPath, appPath, testDomain),
-		promotePlan:    plans.NewPromote(testDomain),
-		manifestPath:   manifestPath,
-		manifestReader: manifest.ReadAndMergeManifests,
+		pushPlan:       pushPlan,
+		promotePlan:    promotePlan,
+		manifestReader: manifestReader,
 	}
 }
 
-func (c planner) GetPlan(command string) (commands plans.Plan, err error) {
-	apps, err := c.manifestReader(c.manifestPath)
+func (c planner) GetPlan(request plans.PluginRequest) (commands plans.Plan, err error) {
+	apps, err := c.manifestReader(request.ManifestPath)
 	if err != nil {
 		return
 	}
@@ -44,13 +46,13 @@ func (c planner) GetPlan(command string) (commands plans.Plan, err error) {
 		return
 	}
 
-	switch command {
+	switch request.Command {
 	case halfpipe_cf_plugin.PUSH:
-		commands, err = c.pushPlan.GetPlan(apps[0])
+		commands, err = c.pushPlan.GetPlan(apps[0], request)
 	case halfpipe_cf_plugin.PROMOTE:
-		commands, err = c.promotePlan.GetPlan(apps[0])
+		commands, err = c.promotePlan.GetPlan(apps[0], request)
 	default:
-		err = ErrUnknownCommand(command)
+		err = ErrUnknownCommand(request.Command)
 	}
 
 	return

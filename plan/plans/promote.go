@@ -5,21 +5,17 @@ import (
 	"strings"
 )
 
-type promote struct {
-	testDomain string
+type promote struct{}
+
+func NewPromote() Planner {
+	return promote{}
 }
 
-func NewPromote(testDomain string) promote {
-	return promote{
-		testDomain: testDomain,
-	}
-}
-
-func (p promote) GetPlan(application manifest.Application) (plan Plan, err error) {
+func (p promote) GetPlan(application manifest.Application, request PluginRequest) (plan Plan, err error) {
 	candidateAppName := createCandidateAppName(application.Name)
 
 	plan = append(plan, addProdRoutes(application, candidateAppName)...)
-	plan = append(plan, removeTestRoute(candidateAppName, p.testDomain))
+	plan = append(plan, removeTestRoute(candidateAppName, request.TestDomain))
 	plan = append(plan, renameCandidate(application, candidateAppName))
 	return
 }

@@ -7,97 +7,101 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
 	"github.com/stretchr/testify/assert"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/springernature/halfpipe-cf-plugin"
 )
 
-type MockPlan struct {
+type mockPlanner struct {
 	plan  plans.Plan
 	error error
 }
 
-func (m MockPlan) GetPlan(application manifest.Application) (plans.Plan, error) {
+func newMockPlanner() mockPlanner {
+	return mockPlanner{}
+}
+
+func newMockPlannerWithError(err error) mockPlanner {
+	return mockPlanner{
+		error: err,
+	}
+}
+
+func newMockPlannerWithPlan(plan plans.Plan) mockPlanner {
+	return mockPlanner{
+		plan: plan,
+	}
+}
+
+func (m mockPlanner) GetPlan(application manifest.Application, request plans.PluginRequest) (plans.Plan, error) {
 	return m.plan, m.error
 }
 
-type MockAppsGetter struct{}
-
-func (MockAppsGetter) GetApps() ([]plugin_models.GetAppsModel, error) {
-	panic("implement me")
+var manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
+	return []manifest.Application{{}}, nil
 }
 
 func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 	expectedError := errors.New("blurgh")
-	command := halfpipe_cf_plugin.PUSH
-
-	controller := NewPlanner("", "", "", MockAppsGetter{})
-	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{}, expectedError
+	manifestReaderWithError := func(pathToManifest string) ([]manifest.Application, error) {
+		return []manifest.Application{{}}, expectedError
 	}
 
-	_, err := controller.GetPlan(command)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithError)
+
+	_, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
 	assert.Equal(t, expectedError, err)
 }
 
 func TestControllerReturnsErrorForBadManifest(t *testing.T) {
-	controller := NewPlanner("", "", "", MockAppsGetter{})
-	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
+	manifestReaderWithEmptyManifest := func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{}, nil
 	}
 
-	_, err := controller.GetPlan(halfpipe_cf_plugin.PUSH)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithEmptyManifest)
+
+	_, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
 	assert.Equal(t, ErrBadManifest, err)
 
-	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
+	///
+
+	manifestReaderWithManifestWithTwoApps := func(pathToManifest string) ([]manifest.Application, error) {
 		return []manifest.Application{
 			{},
 			{},
 		}, nil
 	}
-	_, err = controller.GetPlan(halfpipe_cf_plugin.PROMOTE)
+	controller = NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithManifestWithTwoApps)
+	_, err = controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PROMOTE})
 	assert.Equal(t, ErrBadManifest, err)
 }
 
 func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	expectedErr := errors.New("Meehp")
 
-	controller := NewPlanner("", "", "", MockAppsGetter{})
-	controller.pushPlan = MockPlan{error: expectedErr}
-	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{{}}, nil
-	}
-
-	_, err := controller.GetPlan(halfpipe_cf_plugin.PUSH)
+	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), manifestReader)
+	_, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
 
 	assert.Equal(t, expectedErr, err)
-
 }
 
 func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 	command := "not-supported"
 	expectedErr := ErrUnknownCommand(command)
 
-	controller := NewPlanner("", "", "", MockAppsGetter{})
-	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{{}}, nil
-	}
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReader)
 
-	_, err := controller.GetPlan(command)
+	_, err := controller.GetPlan(plans.PluginRequest{Command: command})
 
 	assert.Equal(t, expectedErr, err)
-
 }
 
 func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
-	expectedPlan := plans.Plan{}
-
-	controller := NewPlanner("", "", "", MockAppsGetter{})
-	controller.pushPlan = MockPlan{plan: expectedPlan}
-	controller.manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{{}}, nil
+	expectedPlan := plans.Plan{
+		plans.NewCfCommand("blurgh"),
 	}
 
-	commands, err := controller.GetPlan(halfpipe_cf_plugin.PUSH)
+	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), manifestReader)
+
+	commands, err := controller.GetPlan(plans.PluginRequest{Command: halfpipe_cf_plugin.PUSH})
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)

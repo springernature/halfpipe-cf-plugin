@@ -57,7 +57,7 @@ func (c Plan) Execute(executor Executor, logger *log.Logger) (err error) {
 }
 
 type Planner interface {
-	GetPlan(application manifest.Application) (Plan, error)
+	GetPlan(application manifest.Application, request PluginRequest) (Plan, error)
 }
 
 type Executor interface {

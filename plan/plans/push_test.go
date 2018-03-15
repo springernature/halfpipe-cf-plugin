@@ -21,9 +21,13 @@ func TestGivesBackAPushPlan(t *testing.T) {
 		NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-n", expectedApplicationName, "-d", testDomain),
 	}
 
-	push := NewPush(manifestPath, appPath, testDomain)
+	push := NewPush()
 
-	commands, err := push.GetPlan(application)
+	commands, err := push.GetPlan(application, PluginRequest{
+		ManifestPath: manifestPath,
+		AppPath:      appPath,
+		TestDomain:   testDomain,
+	})
 
 	assert.Nil(t, err)
 	assert.Len(t, commands, 1)
