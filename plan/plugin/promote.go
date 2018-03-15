@@ -5,6 +5,7 @@ import (
 
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"code.cloudfoundry.org/cli/plugin/models"
 )
 
 type promote struct {
@@ -28,9 +29,7 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 
 	plan = append(plan, addProdRoutes(application, candidateAppName)...)
 	plan = append(plan, removeTestRoute(candidateAppName, request.TestDomain))
-	if len(apps) != 0 {
-		plan = append(plan, renameOldApp(application.Name))
-	}
+	plan = append(plan, renameOldAppAndStopIt(apps, application)...)
 	plan = append(plan, renameCandidate(application, candidateAppName))
 	return
 }
@@ -56,6 +55,20 @@ func renameCandidate(application manifest.Application, candidateAppName string) 
 	return plan.NewCfCommand("rename", candidateAppName, application.Name)
 }
 
-func renameOldApp(appName string) plan.Command {
-	return plan.NewCfCommand("rename", appName, createOldAppName(appName))
+func renameOldAppAndStopIt(apps []plugin_models.GetAppsModel, currentApp manifest.Application) (pl []plan.Command) {
+	if hasOldApp(apps, currentApp) {
+		oldAppName := createOldAppName(currentApp.Name)
+		pl = append(pl, plan.NewCfCommand("rename", currentApp.Name, oldAppName))
+		pl = append(pl, plan.NewCfCommand("stop", oldAppName))
+	}
+	return
+}
+
+func hasOldApp(apps []plugin_models.GetAppsModel, currentApp manifest.Application) bool {
+	for _, app := range apps {
+		if app.Name == currentApp.Name {
+			return true
+		}
+	}
+	return false
 }
