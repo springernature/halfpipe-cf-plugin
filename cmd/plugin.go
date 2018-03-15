@@ -8,7 +8,6 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/springernature/halfpipe-cf-plugin/controller"
-	"github.com/springernature/halfpipe-cf-plugin/color"
 	"github.com/springernature/halfpipe-cf-plugin"
 )
 
@@ -41,13 +40,13 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 
 	p, err := controller.NewController(args[0], manifestPath, appPath, testDomain, cliConnection).GetPlan()
 	if err != nil {
-		logger.Println(color.ErrColor.Sprint(err))
+		logger.Println(err)
 		syscall.Exit(1)
 	}
 
-	logger.Println(color.PlanColor.Sprint(p))
-	if err = p.Execute(cliConnection, logger, color.PlanColor); err != nil {
-		logger.Println(color.ErrColor.Sprint(err))
+	logger.Println(p)
+	if err = p.Execute(cliConnection, logger); err != nil {
+		logger.Println(err)
 		syscall.Exit(1)
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"github.com/fatih/color"
 	"regexp"
 	"code.cloudfoundry.org/cli/util/manifest"
 )
@@ -44,14 +43,14 @@ func (c Plan) String() (s string) {
 	return
 }
 
-func (c Plan) Execute(executor Executor, logger *log.Logger, col *color.Color) (err error) {
+func (c Plan) Execute(executor Executor, logger *log.Logger) (err error) {
 	for _, p := range c {
-		logger.Println(col.Sprintf("=== Executing '%s' ===", p))
+		logger.Println(fmt.Sprintf("=== Executing '%s' ===", p))
 		_, err = executor.CliCommand(p.args...)
 		if err != nil {
 			return
 		}
-		logger.Println(col.Sprintf("=== Succeeded :D ==="))
+		logger.Println(fmt.Sprintf("=== Succeeded :D ==="))
 		logger.Println()
 	}
 	return
