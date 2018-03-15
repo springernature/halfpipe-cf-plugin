@@ -45,7 +45,7 @@ func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 		return []manifest.Application{{}}, expectedError
 	}
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithError)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithError)
 
 	_, err := controller.GetPlan(Request{Command: types.PUSH})
 	assert.Equal(t, expectedError, err)
@@ -56,7 +56,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 		return []manifest.Application{}, nil
 	}
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithEmptyManifest)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithEmptyManifest)
 
 	_, err := controller.GetPlan(Request{Command: types.PUSH})
 	assert.Equal(t, ErrBadManifest, err)
@@ -69,7 +69,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 			{},
 		}, nil
 	}
-	controller = NewPlanner(newMockPlanner(), newMockPlanner(), manifestReaderWithManifestWithTwoApps)
+	controller = NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithManifestWithTwoApps)
 	_, err = controller.GetPlan(Request{Command: types.PROMOTE})
 	assert.Equal(t, ErrBadManifest, err)
 }
@@ -77,7 +77,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	expectedErr := errors.New("Meehp")
 
-	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), manifestReader)
+	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), newMockPlanner(), manifestReader)
 	_, err := controller.GetPlan(Request{Command: types.PUSH})
 
 	assert.Equal(t, expectedErr, err)
@@ -87,7 +87,7 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 	command := "not-supported"
 	expectedErr := ErrUnknownCommand(command)
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), manifestReader)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReader)
 
 	_, err := controller.GetPlan(Request{Command: command})
 
@@ -99,7 +99,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 		plan.NewCfCommand("blurgh"),
 	}
 
-	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), manifestReader)
+	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), manifestReader)
 
 	commands, err := controller.GetPlan(Request{Command: types.PUSH})
 

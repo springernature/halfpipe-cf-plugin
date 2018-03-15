@@ -28,13 +28,15 @@ type Plan interface {
 type pluginPlan struct {
 	pushPlan       Planner
 	promotePlan    Planner
+	deletePlan 	   Planner
 	manifestReader ManifestReader
 }
 
-func NewPlanner(pushPlan Planner, promotePlan Planner, manifestReader ManifestReader) Plan {
+func NewPlanner(pushPlan Planner, promotePlan Planner, deletePlan Planner, manifestReader ManifestReader) Plan {
 	return pluginPlan{
 		pushPlan:       pushPlan,
 		promotePlan:    promotePlan,
+		deletePlan:     deletePlan,
 		manifestReader: manifestReader,
 	}
 }
@@ -55,6 +57,8 @@ func (c pluginPlan) GetPlan(request Request) (commands plan.Plan, err error) {
 		commands, err = c.pushPlan.GetPlan(apps[0], request)
 	case types.PROMOTE:
 		commands, err = c.promotePlan.GetPlan(apps[0], request)
+	case types.DELETE:
+		commands, err = c.deletePlan.GetPlan(apps[0], request)
 	default:
 		err = ErrUnknownCommand(request.Command)
 	}
