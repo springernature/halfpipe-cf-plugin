@@ -1,4 +1,4 @@
-package plans
+package plugin
 
 import (
 	"strings"

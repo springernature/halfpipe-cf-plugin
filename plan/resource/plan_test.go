@@ -1,4 +1,4 @@
-package resource_plan
+package resource
 
 import (
 	"path"
@@ -7,19 +7,18 @@ import (
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin"
-	"github.com/springernature/halfpipe-cf-plugin/resource/out"
 	"github.com/stretchr/testify/assert"
 )
 
-var validRequest = out.Request{
-	Source: out.Source{
+var validRequest = Request{
+	Source: Source{
 		API:      "a",
 		Org:      "b",
 		Space:    "c",
 		Username: "d",
 		Password: "e",
 	},
-	Params: out.Params{
+	Params: Params{
 		ManifestPath: "manifest.yml",
 		AppPath:      "",
 		TestDomain:   "kehe.com",
@@ -30,10 +29,17 @@ var validRequest = out.Request{
 		},
 	},
 }
+var manifestReaderWithOneApp = func(pathToManifest string) (apps []manifest.Application, err error) {
+	return []manifest.Application{{}}, nil
+}
+
+var manifestWriterWithoutError = func(application manifest.Application, filePath string) error {
+	return nil
+}
 
 func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
-	_, err := NewPlan().Plan(out.Request{
-		Source: out.Source{
+	_, err := NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError).Plan(Request{
+		Source: Source{
 			API:      "a",
 			Org:      "b",
 			Space:    "c",
@@ -43,8 +49,8 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 	}, "")
 	assert.Equal(t, NewErrEmptyParamValue("manifestPath").Error(), err.Error())
 
-	_, err = NewPlan().Plan(out.Request{
-		Params: out.Params{
+	_, err = NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError).Plan(Request{
+		Params: Params{
 			Command:      types.PUSH,
 			ManifestPath: "f",
 			AppPath:      "",
@@ -60,13 +66,14 @@ func TestReturnsErrorIfWeFailToReadManifest(t *testing.T) {
 	concourseRoot := "/tmp/some/path"
 	fullManifestPath := path.Join(concourseRoot, validRequest.Params.ManifestPath)
 
-	push := NewPlan()
-	push.manifestReader = func(pathToManifest string) (apps []manifest.Application, err error) {
+	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
 		if pathToManifest == fullManifestPath {
 			err = expectedError
 		}
 		return
 	}
+
+	push := NewPlanner(manifestReader, manifestWriterWithoutError)
 
 	_, err := push.Plan(validRequest, concourseRoot)
 	assert.Equal(t, expectedError, err)
@@ -78,16 +85,13 @@ func TestReturnsErrorIfWeFailToWriteManifest(t *testing.T) {
 	concourseRoot := "/tmp/some/path"
 	fullManifestPath := path.Join(concourseRoot, validRequest.Params.ManifestPath)
 
-	push := NewPlan()
-	push.manifestReader = func(pathToManifest string) (apps []manifest.Application, err error) {
-		return []manifest.Application{{}}, nil
-	}
-	push.manifestWriter = func(application manifest.Application, filePath string) error {
+	manifestWriter := func(application manifest.Application, filePath string) error {
 		if filePath == fullManifestPath {
 			return expectedError
 		}
 		return nil
 	}
+	push := NewPlanner(manifestReaderWithOneApp, manifestWriter)
 
 	_, err := push.Plan(validRequest, concourseRoot)
 
@@ -100,25 +104,26 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 	var manifestReaderCalled = false
 	var manifestWriterCalled = false
 
-	push := NewPlan()
-	push.manifestReader = func(pathToManifest string) (apps []manifest.Application, err error) {
+	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
 		manifestReaderCalled = true
 		return []manifest.Application{}, nil
 	}
-	push.manifestWriter = func(application manifest.Application, filePath string) error {
+	manifestWriter := func(application manifest.Application, filePath string) error {
 		manifestWriterCalled = true
 		return nil
 	}
 
-	validPromoteRequest := out.Request{
-		Source: out.Source{
+	push := NewPlanner(manifestReader, manifestWriter)
+
+	validPromoteRequest := Request{
+		Source: Source{
 			API:      "a",
 			Org:      "b",
 			Space:    "c",
 			Username: "d",
 			Password: "e",
 		},
-		Params: out.Params{
+		Params: Params{
 			ManifestPath: "manifest.yml",
 			AppPath:      "",
 			TestDomain:   "kehe.com",
@@ -157,14 +162,15 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 		},
 	}
 	var actualManifest manifest.Application
-	push := NewPlan()
-	push.manifestReader = func(pathToManifest string) (apps []manifest.Application, err error) {
+
+	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
 		return []manifest.Application{applicationManifest}, nil
 	}
-	push.manifestWriter = func(application manifest.Application, filePath string) error {
+	manifestWriter := func(application manifest.Application, filePath string) error {
 		actualManifest = application
 		return nil
 	}
+	push := NewPlanner(manifestReader, manifestWriter)
 
 	p, err := push.Plan(validRequest, "")
 

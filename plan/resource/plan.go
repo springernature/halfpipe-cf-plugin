@@ -1,4 +1,4 @@
-package resource_plan
+package resource
 
 import (
 	"errors"
@@ -7,8 +7,7 @@ import (
 
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
-	"github.com/springernature/halfpipe-cf-plugin/resource/out"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -23,15 +22,19 @@ var NewErrEmptySourceValue = func(fieldName string) error {
 	return errors.New(errorMsg)
 }
 
+type Plan interface {
+	Plan(request Request, concourseRoot string) (plan plan.Plan, err error)
+}
+
 type planner struct {
 	manifestReader func(pathToManifest string) ([]manifest.Application, error)
 	manifestWriter func(application manifest.Application, filePath string) error
 }
 
-func NewPlan() planner {
+func NewPlanner(manifestReader func(pathToManifest string) ([]manifest.Application, error), manifestWriter func(application manifest.Application, filePath string) error) Plan {
 	return planner{
-		manifestReader: manifest.ReadAndMergeManifests,
-		manifestWriter: manifest.WriteApplicationManifest,
+		manifestReader: manifestReader,
+		manifestWriter: manifestWriter,
 	}
 }
 
@@ -49,7 +52,7 @@ func checkSourceField(field string, value string) (err error) {
 	return
 }
 
-func check(request out.Request) (err error) {
+func check(request Request) (err error) {
 	if err = checkParamField("manifestPath", request.Params.ManifestPath); err != nil {
 		return
 	}
@@ -85,7 +88,7 @@ func check(request out.Request) (err error) {
 	return
 }
 
-func (p planner) Plan(request out.Request, concourseRoot string) (pl plans.Plan, err error) {
+func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err error) {
 	if err = check(request); err != nil {
 		return
 	}
@@ -98,14 +101,14 @@ func (p planner) Plan(request out.Request, concourseRoot string) (pl plans.Plan,
 		}
 	}
 
-	pl = plans.Plan{
-		plans.NewCfCommand("login",
+	pl = plan.Plan{
+		plan.NewCfCommand("login",
 			"-a", request.Source.API,
 			"-u", request.Source.Username,
 			"-p", request.Source.Password,
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
-		plans.NewCfCommand(request.Params.Command,
+		plan.NewCfCommand(request.Params.Command,
 			"-manifestPath", fullManifestPath,
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,

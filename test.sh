@@ -29,7 +29,7 @@ TMP_DIR=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'` # Support both for li
 PLUGIN_BIN_PATH=${TMP_DIR}/plugin
 
 # Compile the plugin
-go build -o ${PLUGIN_BIN_PATH} cmd/plugin.go
+go build -o ${PLUGIN_BIN_PATH} cmd/plugin/plugin.go
 
 # Install it
 

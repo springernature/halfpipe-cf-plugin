@@ -1,6 +1,6 @@
-package plans
+package plugin
 
-type PluginRequest struct {
+type Request struct {
 	Command      string
 	ManifestPath string
 	AppPath      string

@@ -1,4 +1,4 @@
-package plugin
+package main
 
 import (
 	"flag"
@@ -6,11 +6,10 @@ import (
 	"os"
 	"syscall"
 
-	"code.cloudfoundry.org/cli/plugin"
+	cfPlugin "code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin"
-	"github.com/springernature/halfpipe-cf-plugin/plan"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plugin"
 )
 
 type Halfpipe struct{}
@@ -27,7 +26,7 @@ func parseArgs(args []string) (manifestPath string, appPath string, testDomain s
 	return *mP, *aP, *tD
 }
 
-func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
+func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	command := args[0]
 	if command == "CLI-MESSAGE-UNINSTALL" {
 		syscall.Exit(0)
@@ -36,16 +35,16 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 	logger := log.New(os.Stdout, "", 0)
 
 	manifestPath, appPath, testDomain := parseArgs(args)
-	pluginRequest := plans.PluginRequest{
+	pluginRequest := plugin.Request{
 		Command:      command,
 		ManifestPath: manifestPath,
 		AppPath:      appPath,
 		TestDomain:   testDomain,
 	}
 
-	planner := plan.NewPlanner(
-		plans.NewPush(),
-		plans.NewPromote(),
+	planner := plugin.NewPlanner(
+		plugin.NewPushPlanner(),
+		plugin.NewPromotePlanner(),
 		manifest.ReadAndMergeManifests,
 	)
 
@@ -62,10 +61,10 @@ func (Halfpipe) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 }
 
-func (Halfpipe) GetMetadata() plugin.PluginMetadata {
-	return plugin.PluginMetadata{
+func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
+	return cfPlugin.PluginMetadata{
 		Name: "halfpipe",
-		Commands: []plugin.Command{
+		Commands: []cfPlugin.Command{
 			{
 				Name: types.PUSH,
 			},
@@ -77,5 +76,5 @@ func (Halfpipe) GetMetadata() plugin.PluginMetadata {
 }
 
 func main() {
-	plugin.Start(new(Halfpipe))
+	cfPlugin.Start(new(Halfpipe))
 }

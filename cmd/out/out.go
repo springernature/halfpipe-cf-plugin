@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
+	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plans"
-	"github.com/springernature/halfpipe-cf-plugin/resource/out"
-	"github.com/springernature/halfpipe-cf-plugin/resource/out/resource_plan"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
 )
 
 func main() {
@@ -26,19 +26,19 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	request := out.Request{}
+	request := resource.Request{}
 	err = json.Unmarshal(data, &request)
 	if err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
 	}
 
-	var p plans.Plan
+	var p plan.Plan
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")
 	case types.PUSH, types.PROMOTE:
-		p, err = resource_plan.NewPlan().Plan(request, concourseRoot)
+		p, err = resource.NewPlanner(manifest.ReadAndMergeManifests, manifest.WriteApplicationManifest).Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))
 	}
@@ -48,15 +48,15 @@ func main() {
 		syscall.Exit(1)
 	}
 
-	if err = p.Execute(out.NewCliExecutor(), logger); err != nil {
+	if err = p.Execute(resource.NewCliExecutor(), logger); err != nil {
 		os.Exit(1)
 	}
 
-	response := out.Response{
-		Version: out.Version{
+	response := resource.Response{
+		Version: resource.Version{
 			Timestamp: time.Now(),
 		},
-		Metadata: []out.MetadataPair{
+		Metadata: []resource.MetadataPair{
 			{Name: "Api", Value: request.Source.API},
 			{Name: "Org", Value: request.Source.Org},
 			{Name: "Space", Value: request.Source.Space},

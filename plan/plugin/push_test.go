@@ -1,9 +1,10 @@
-package plans
+package plugin
 
 import (
 	"testing"
 
 	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,13 +18,13 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	appPath := "path/to/app.jar"
 	testDomain := "domain.com"
 
-	expectedPlan := Plan{
-		NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-n", expectedApplicationName, "-d", testDomain),
+	expectedPlan := plan.Plan{
+		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-n", expectedApplicationName, "-d", testDomain),
 	}
 
-	push := NewPush()
+	push := NewPushPlanner()
 
-	commands, err := push.GetPlan(application, PluginRequest{
+	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
 		AppPath:      appPath,
 		TestDomain:   testDomain,

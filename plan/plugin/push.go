@@ -1,15 +1,16 @@
-package plans
+package plugin
 
 import (
 	"code.cloudfoundry.org/cli/util/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 type push struct{}
 
-func (p push) GetPlan(application manifest.Application, request PluginRequest) (plan Plan, err error) {
+func (p push) GetPlan(application manifest.Application, request Request) (pl plan.Plan, err error) {
 	candidateName := createCandidateAppName(application.Name)
 
-	command := NewCfCommand(
+	command := plan.NewCfCommand(
 		"push",
 		candidateName,
 		"-f", request.ManifestPath,
@@ -17,10 +18,10 @@ func (p push) GetPlan(application manifest.Application, request PluginRequest) (
 		"-n", candidateName,
 		"-d", request.TestDomain,
 	)
-	plan = append(plan, command)
+	pl = append(pl, command)
 	return
 }
 
-func NewPush() Planner {
+func NewPushPlanner() Planner {
 	return push{}
 }
