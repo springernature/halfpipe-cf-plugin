@@ -75,8 +75,14 @@ jobs:
         args:
         - -ec
         - |
-          exit 0
+          ./integration_test.sh
         dir: halfpipe-cf-plugin
+      params:
+        API: ((cloudfoundry.api-gcp))
+        USERNAME: ((cloudfoundry.username))
+        PASSWORD: ((cloudfoundry.password))
+        ORG: engineering-enablement
+        SPACE: integration_test
       inputs:
       - name: halfpipe-cf-plugin
 
