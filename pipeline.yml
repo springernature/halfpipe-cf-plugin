@@ -54,10 +54,6 @@ jobs:
 - name: Run smoke tests in dev docker image
   serial: true
   plan:
-  - get: docker-registry
-    trigger: true
-    params:
-      skip_download: true
   - get: halfpipe-cf-plugin
     passed:
     - Push dev docker image
@@ -70,7 +66,6 @@ jobs:
         source:
           repository: platformengineering/cf-resource
           tag: dev
-
       run:
         path: /bin/sh
         args:
@@ -90,13 +85,10 @@ jobs:
 - name: Tag docker image as stable
   serial: true
   plan:
-  - get: docker-registry
+  - get: halfpipe-cf-plugin
     passed:
     - Run smoke tests in dev docker image
     trigger: true
-    params:
-      skip_download: true
-  - get: halfpipe-cf-plugin
   - put: docker-registry
     params:
       build: halfpipe-cf-plugin
