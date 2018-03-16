@@ -61,6 +61,7 @@ jobs:
   - get: halfpipe-cf-plugin
     passed:
     - Push dev docker image
+    trigger: true
   - task: run
     config:
       platform: linux
