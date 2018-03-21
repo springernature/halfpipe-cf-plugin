@@ -34,3 +34,31 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	assert.Len(t, commands, 1)
 	assert.Equal(t, expectedPlan, commands)
 }
+
+func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+	expectedApplicationName := createCandidateAppName(application.Name)
+
+	manifestPath := "path/to/manifest.yml"
+	appPath := "path/to/app.jar"
+	testDomain := "domain.com"
+
+	expectedPlan := plan.Plan{
+		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath),
+	}
+
+	push := NewPushPlanner()
+
+	commands, err := push.GetPlan(application, Request{
+		ManifestPath: manifestPath,
+		AppPath:      appPath,
+		TestDomain:   testDomain,
+	})
+
+	assert.Nil(t, err)
+	assert.Len(t, commands, 1)
+	assert.Equal(t, expectedPlan, commands)
+}

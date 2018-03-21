@@ -10,15 +10,24 @@ type push struct{}
 func (p push) GetPlan(application manifest.Application, request Request) (pl plan.Plan, err error) {
 	candidateName := createCandidateAppName(application.Name)
 
-	command := plan.NewCfCommand(
-		"push",
-		candidateName,
-		"-f", request.ManifestPath,
-		"-p", request.AppPath,
-		"-n", candidateName,
-		"-d", request.TestDomain,
-	)
-	pl = append(pl, command)
+	if application.NoRoute {
+		pl = append(pl, plan.NewCfCommand(
+			"push",
+			candidateName,
+			"-f", request.ManifestPath,
+			"-p", request.AppPath,
+		))
+	} else {
+		pl = append(pl, plan.NewCfCommand(
+			"push",
+			candidateName,
+			"-f", request.ManifestPath,
+			"-p", request.AppPath,
+			"-n", candidateName,
+			"-d", request.TestDomain,
+		))
+	}
+
 	return
 }
 

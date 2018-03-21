@@ -27,13 +27,17 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 
 	candidateAppName := createCandidateAppName(application.Name)
 
-	plan = append(plan, addProdRoutes(application, candidateAppName)...)
-	plan = append(plan, removeTestRoute(candidateAppName, request.TestDomain))
+	if !application.NoRoute {
+		plan = append(plan, addProdRoutes(application, candidateAppName)...)
+		plan = append(plan, removeTestRoute(candidateAppName, request.TestDomain))
+	}
+
 	plan = append(plan, renameOlderApp(apps, createOldAppName(application.Name), application.Name)...)
 	plan = append(plan, renameOldAppAndStopIt(apps, application)...)
 	plan = append(plan, renameCandidate(application, candidateAppName))
 	return
 }
+
 func addProdRoutes(application manifest.Application, candidateAppName string) (commands []plan.Command) {
 	for _, route := range application.Routes {
 		parts := strings.Split(route, ".")

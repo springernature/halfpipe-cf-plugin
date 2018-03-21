@@ -63,6 +63,28 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 	assert.Equal(t, expectedPlan, commands)
 }
 
+func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsNoOldApp(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+	testDomain := "domain.com"
+
+	candidateAppName := createCandidateAppName(application.Name)
+	expectedPlan := plan.Plan{
+		plan.NewCfCommand("rename", candidateAppName, application.Name),
+	}
+
+	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
+
+	commands, err := promote.GetPlan(application, Request{
+		TestDomain: testDomain,
+	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedPlan, commands)
+}
+
 func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
@@ -128,6 +150,34 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldApp(t *testing.T) {
 	assert.Equal(t, expectedPlan, commands)
 }
 
+func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldApp(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+	testDomain := "domain.com"
+
+	candidateAppName := createCandidateAppName(application.Name)
+	expectedPlan := plan.Plan{
+		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
+		plan.NewCfCommand("stop", "my-app-OLD"),
+		plan.NewCfCommand("rename", candidateAppName, application.Name),
+	}
+
+	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
+		{
+			Name: application.Name,
+		},
+	}, nil))
+
+	commands, err := promote.GetPlan(application, Request{
+		TestDomain: testDomain,
+	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedPlan, commands)
+}
+
 func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
@@ -147,6 +197,41 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
 		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
 		plan.NewCfCommand("stop", "my-app-OLD"),
 		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
+	}
+
+	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
+		{
+			Name: application.Name,
+		},
+		{
+			Name: createOldAppName(application.Name),
+		},
+	}, nil))
+
+	commands, err := promote.GetPlan(application, Request{
+		TestDomain: testDomain,
+	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedPlan, commands)
+}
+
+func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+	testDomain := "domain.com"
+
+	candidateAppName := createCandidateAppName(application.Name)
+	oldAppName := createOldAppName(application.Name)
+	deleteAppName := createDeleteName(application.Name)
+
+	expectedPlan := plan.Plan{
+		plan.NewCfCommand("rename", oldAppName, deleteAppName),
+		plan.NewCfCommand("rename", application.Name, oldAppName),
+		plan.NewCfCommand("stop", oldAppName),
+		plan.NewCfCommand("rename", candidateAppName, application.Name),
 	}
 
 	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
