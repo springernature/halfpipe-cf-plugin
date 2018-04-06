@@ -18,6 +18,8 @@ import (
 func main() {
 	concourseRoot := os.Args[1]
 
+	started := time.Now()
+
 	logger := log.New(os.Stderr, "", 0)
 
 	data, err := ioutil.ReadAll(os.Stdin)
@@ -52,14 +54,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	finished := time.Now()
+
 	response := resource.Response{
 		Version: resource.Version{
-			Timestamp: time.Now(),
+			Timestamp: finished,
 		},
 		Metadata: []resource.MetadataPair{
 			{Name: "Api", Value: request.Source.API},
 			{Name: "Org", Value: request.Source.Org},
 			{Name: "Space", Value: request.Source.Space},
+			{Name: "Duration", Value: finished.Sub(started).String()},
 		},
 	}
 	if err = json.NewEncoder(os.Stdout).Encode(response); err != nil {
