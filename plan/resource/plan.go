@@ -112,6 +112,7 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 			"-manifestPath", fullManifestPath,
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,
+			"-space", request.Source.Space,
 		),
 	}
 

@@ -29,7 +29,7 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 
 	if !application.NoRoute {
 		plan = append(plan, addProdRoutes(application, candidateAppName)...)
-		plan = append(plan, removeTestRoute(candidateAppName, request.TestDomain))
+		plan = append(plan, removeTestRoute(application.Name, request.Space, request.TestDomain))
 	}
 
 	plan = append(plan, renameOlderApp(apps, createOldAppName(application.Name), application.Name)...)
@@ -51,8 +51,10 @@ func addProdRoutes(application manifest.Application, candidateAppName string) (c
 	return
 }
 
-func removeTestRoute(candidateAppName string, testDomain string) plan.Command {
-	return plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", candidateAppName)
+func removeTestRoute(appName string, space string, testDomain string) plan.Command {
+	candidateAppName := createCandidateAppName(appName)
+	candidateHostname := createCandidateHostname(appName, space)
+	return plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", candidateHostname)
 }
 
 func renameCandidate(application manifest.Application, candidateAppName string) plan.Command {

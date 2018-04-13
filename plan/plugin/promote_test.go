@@ -49,7 +49,7 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
 		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-CANDIDATE"),
+		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-dev-CANDIDATE"),
 		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
 	}
 
@@ -57,6 +57,7 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 
 	commands, err := promote.GetPlan(application, Request{
 		TestDomain: testDomain,
+		Space:      "dev",
 	})
 
 	assert.Nil(t, err)
@@ -99,7 +100,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
 		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-CANDIDATE"),
+		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-dev-CANDIDATE"),
 		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
 	}
 
@@ -110,6 +111,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing
 
 	commands, err := promote.GetPlan(application, Request{
 		TestDomain: testDomain,
+		Space:      "dev",
 	})
 
 	assert.Nil(t, err)
@@ -130,7 +132,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldApp(t *testing.T) {
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
 		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-CANDIDATE"),
+		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-live-CANDIDATE"),
 		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
 		plan.NewCfCommand("stop", "my-app-OLD"),
 		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
@@ -144,6 +146,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldApp(t *testing.T) {
 
 	commands, err := promote.GetPlan(application, Request{
 		TestDomain: testDomain,
+		Space:      "live",
 	})
 
 	assert.Nil(t, err)
@@ -192,7 +195,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
 		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-CANDIDATE"),
+		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-yolo-CANDIDATE"),
 		plan.NewCfCommand("rename", "my-app-OLD", "my-app-DELETE"),
 		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
 		plan.NewCfCommand("stop", "my-app-OLD"),
@@ -210,6 +213,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
 
 	commands, err := promote.GetPlan(application, Request{
 		TestDomain: testDomain,
+		Space:      "yolo",
 	})
 
 	assert.Nil(t, err)

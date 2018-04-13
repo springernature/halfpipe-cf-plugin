@@ -23,7 +23,7 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 			candidateName,
 			"-f", request.ManifestPath,
 			"-p", request.AppPath,
-			"-n", candidateName,
+			"-n", createCandidateHostname(application.Name, request.Space),
 			"-d", request.TestDomain,
 		))
 	}

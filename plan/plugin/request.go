@@ -5,4 +5,5 @@ type Request struct {
 	ManifestPath string
 	AppPath      string
 	TestDomain   string
+	Space        string
 }
