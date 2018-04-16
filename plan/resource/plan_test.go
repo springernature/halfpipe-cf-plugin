@@ -142,6 +142,39 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 	assert.False(t, manifestWriterCalled)
 }
 
+func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *testing.T) {
+	applicationManifest := manifest.Application{
+		Name: "MyApp",
+	}
+
+	expectedManifest := manifest.Application{
+		Name:                 "MyApp",
+		EnvironmentVariables: validRequest.Params.Vars,
+	}
+
+
+	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
+		return []manifest.Application{applicationManifest}, nil
+	}
+
+	var actualManifest manifest.Application
+	manifestWriter := func(application manifest.Application, filePath string) error {
+		actualManifest = application
+
+		return nil
+	}
+
+	push := NewPlanner(manifestReader, manifestWriter)
+
+	p, err := push.Plan(validRequest, "")
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedManifest, actualManifest)
+	assert.Len(t, p, 2)
+	assert.Contains(t, p[0].String(), "cf login")
+	assert.Contains(t, p[1].String(), "cf halfpipe-push")
+}
+
 func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 	applicationManifest := manifest.Application{
 		Name: "MyApp",

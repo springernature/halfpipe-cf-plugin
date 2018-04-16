@@ -128,19 +128,19 @@ func (p planner) updateManifestWithVars(manifestPath string, vars map[string]str
 		}
 
 		// We just assume the first app in the manifest is the app under deployment.
-		// We should lint for only one app in the manifest in halfpipe.
+		// We lint that this is the case in the halfpipe linter.
 		app := apps[0]
 		if len(app.EnvironmentVariables) == 0 {
-			app.EnvironmentVariables = make(map[string]string)
+			app.EnvironmentVariables = map[string]string{}
 		}
+
 		for key, value := range vars {
 			app.EnvironmentVariables[key] = value
 		}
 
-		if err = p.manifestWriter(apps[0], manifestPath); err != nil {
+		if err = p.manifestWriter(app, manifestPath); err != nil {
 			return
 		}
-
 	}
 	return
 }
