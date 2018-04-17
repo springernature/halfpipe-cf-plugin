@@ -270,7 +270,7 @@ func TestRenamesOldAppAndDeleteApp(t *testing.T) {
 		{Name: "my-app-DELETE-1"},
 	}
 
-	planRename := renameOlderApp(apps, oldAppName, application.Name)
+	planRename := renameOldAppToDelete(apps, oldAppName, application.Name)
 
 	expectedPlan := []plan.Command{
 		plan.NewCfCommand("rename", oldAppName, "my-app-DELETE-2"),
@@ -290,7 +290,7 @@ func TestRenamesOldAppWhenNoDeletePresent(t *testing.T) {
 		{Name: "my-app-OLD"},
 	}
 
-	planRename := renameOlderApp(apps, oldAppName, application.Name)
+	planRename := renameOldAppToDelete(apps, oldAppName, application.Name)
 
 	expectedPlan := []plan.Command{
 		plan.NewCfCommand("rename", oldAppName, "my-app-DELETE"),
