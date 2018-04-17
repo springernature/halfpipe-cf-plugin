@@ -8,8 +8,8 @@ import (
 
 	cfPlugin "code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plugin"
 	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/springernature/halfpipe-cf-plugin/plan/plugin"
 )
 
 type Halfpipe struct{}
@@ -45,7 +45,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	planner := plugin.NewPlanner(
-		plugin.NewPushPlanner(),
+		plugin.NewPushPlanner(cliConnection),
 		plugin.NewPromotePlanner(cliConnection),
 		plugin.NewDeletePlanner(cliConnection),
 		manifest.ReadAndMergeManifests,
