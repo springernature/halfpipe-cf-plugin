@@ -229,7 +229,7 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldAppAndAnEvenOlder(t *
 
 	candidateAppName := createCandidateAppName(application.Name)
 	oldAppName := createOldAppName(application.Name)
-	deleteAppName := createDeleteName(application.Name)
+	deleteAppName := createDeleteName(application.Name, 0)
 
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("rename", oldAppName, deleteAppName),
@@ -254,3 +254,48 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldAppAndAnEvenOlder(t *
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)
 }
+
+
+func TestRenamesOldAppAndDeleteApp(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+
+	oldAppName := createOldAppName(application.Name)
+
+	apps := []plugin_models.GetAppsModel{
+		{Name: "my-app-OLD"},
+		{Name: "my-app-DELETE"},
+		{Name: "my-app-DELETE-1"},
+	}
+
+	planRename := renameOlderApp(apps, oldAppName, application.Name)
+
+	expectedPlan := []plan.Command{
+		plan.NewCfCommand("rename", oldAppName, "my-app-DELETE-2"),
+	}
+	assert.Equal(t, expectedPlan, planRename)
+}
+
+func TestRenamesOldAppWhenNoDeletePresent(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+
+	oldAppName := createOldAppName(application.Name)
+
+	apps := []plugin_models.GetAppsModel{
+		{Name: "my-app-OLD"},
+	}
+
+	planRename := renameOlderApp(apps, oldAppName, application.Name)
+
+	expectedPlan := []plan.Command{
+		plan.NewCfCommand("rename", oldAppName, "my-app-DELETE"),
+	}
+	assert.Equal(t, expectedPlan, planRename)
+}
+
+

@@ -50,7 +50,7 @@ func TestGivesBackADeletePlan(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
 	}
-	expectedApplicationName := createDeleteName(application.Name)
+	expectedApplicationName := createDeleteName(application.Name, 0)
 
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("delete", expectedApplicationName, "-f"),

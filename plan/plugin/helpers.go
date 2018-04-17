@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"strings"
+	"fmt"
 )
 
 func createCandidateAppName(appName string) string {
@@ -16,6 +17,9 @@ func createOldAppName(appName string) string {
 	return strings.Join([]string{appName, "OLD"}, "-")
 }
 
-func createDeleteName(appName string) string {
-	return strings.Join([]string{appName, "DELETE"}, "-")
+func createDeleteName(appName string, index int) string {
+	if index == 0 {
+		return fmt.Sprintf("%s-DELETE", appName)
+	}
+	return fmt.Sprintf("%s-DELETE-%d", appName, index)
 }

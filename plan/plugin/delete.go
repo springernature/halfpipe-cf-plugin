@@ -11,7 +11,7 @@ type delete struct {
 }
 
 func (p delete) GetPlan(application manifest.Application, request Request) (pl plan.Plan, err error) {
-	deleteName := createDeleteName(application.Name)
+	deleteName := createDeleteName(application.Name, 0)
 
 	deletableApp, err := p.thereIsAnAppToBeDeleted(deleteName)
 	if err != nil {

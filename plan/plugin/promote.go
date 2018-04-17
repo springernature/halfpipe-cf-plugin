@@ -73,10 +73,30 @@ func renameOldAppAndStopIt(apps []plugin_models.GetAppsModel, currentApp manifes
 }
 
 func renameOlderApp(apps []plugin_models.GetAppsModel, oldAppName string, appName string) (pl []plan.Command) {
-	for _, app := range apps {
-		if app.Name == oldAppName {
-			pl = append(pl, plan.NewCfCommand("rename", app.Name, createDeleteName(appName)))
+	appExists := func(appName string) bool {
+		for _, app := range apps {
+			if app.Name == appName {
+				return true
+			}
+		}
+		return false
+	}
+
+	var getDeleteName func(int) string
+
+	getDeleteName = func(index int) string {
+		newName := createDeleteName(appName, index)
+		if appExists(newName) {
+			return getDeleteName(index+1)
+		} else {
+			return newName
 		}
 	}
+
+	if appExists(oldAppName) {
+		deleteName := getDeleteName(0)
+		pl = append(pl, plan.NewCfCommand("rename", oldAppName, deleteName))
+	}
+
 	return
 }
