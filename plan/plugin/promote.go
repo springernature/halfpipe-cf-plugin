@@ -90,24 +90,3 @@ func renameOldAppToDelete(apps []plugin_models.GetAppsModel, oldAppName string, 
 
 	return
 }
-
-func appExists(apps []plugin_models.GetAppsModel, appName string) bool {
-	for _, app := range apps {
-		if app.Name == appName {
-			return true
-		}
-	}
-	return false
-}
-
-func routeExists(apps []plugin_models.GetAppsModel, domain string, host string) bool {
-	for _, app := range apps {
-		for _, route := range app.Routes {
-			if route.Host == host && route.Domain.Name == domain {
-				return true
-			}
-
-		}
-	}
-	return false
-}

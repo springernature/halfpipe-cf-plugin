@@ -46,7 +46,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	planner := plugin.NewPlanner(
-		plugin.NewPushPlanner(cliConnection),
+		plugin.NewPushPlanner(plugin.NewCheck(cliConnection)),
 		plugin.NewPromotePlanner(cliConnection),
 		plugin.NewDeletePlanner(cliConnection),
 		manifest.ReadAndMergeManifests,
@@ -57,7 +57,6 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		logger.Println(err)
 		syscall.Exit(1)
 	}
-
 
 	logger.Println(p)
 	if err = p.Execute(cliConnection, logger); err != nil {

@@ -1,19 +1,17 @@
 package plugin
 
 import (
-	"fmt"
-
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 type push struct {
-	appsGetter AppsGetter
+	check check
 }
 
-func NewPushPlanner(appsGetter AppsGetter) push {
+func NewPushPlanner(check check) push {
 	return push{
-		appsGetter: appsGetter,
+		check: check,
 	}
 }
 
@@ -21,7 +19,7 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 	candidateName := createCandidateAppName(application.Name)
 	candidateHost := createCandidateHostname(application.Name, request.Space)
 
-	if ok, stateError := p.IsCFInAGoodState(candidateName, request.TestDomain, candidateHost); !ok {
+	if ok, stateError := p.check.IsCFInAGoodState(application.Name, request.TestDomain, candidateHost); !ok {
 		err = stateError
 		return
 	}
@@ -43,23 +41,5 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 			"-d", request.TestDomain,
 		))
 	}
-
 	return
-}
-
-func (p push) IsCFInAGoodState(candidateAppName string, testDomain string, candidateRoute string) (bool, error) {
-	apps, e := p.appsGetter.GetApps()
-	if e != nil {
-		return false, e
-	}
-
-	if appExists(apps, candidateAppName) {
-		return false, fmt.Errorf("error! Candidate app name already exists %s. Please make sure cf is in the right state", candidateAppName)
-	}
-
-	if routeExists(apps, testDomain, candidateRoute) {
-		return false, fmt.Errorf("error! test route is already in use %s.%s. Please make sure cf is in the right state", candidateRoute, testDomain)
-	}
-
-	return true, nil
 }
