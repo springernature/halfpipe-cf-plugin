@@ -54,11 +54,11 @@ func (p push) IsCFInAGoodState(candidateAppName string, testDomain string, candi
 	}
 
 	if appExists(apps, candidateAppName) {
-		return false, fmt.Errorf("candidate app name already exists %s", candidateAppName)
+		return false, fmt.Errorf("error! Candidate app name already exists %s. Please make sure cf is in the right state", candidateAppName)
 	}
 
 	if routeExists(apps, testDomain, candidateRoute) {
-		return false, fmt.Errorf("test route is already in use %s.%s", candidateRoute, testDomain)
+		return false, fmt.Errorf("error! test route is already in use %s.%s. Please make sure cf is in the right state", candidateRoute, testDomain)
 	}
 
 	return true, nil
