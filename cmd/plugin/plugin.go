@@ -28,12 +28,13 @@ func parseArgs(args []string) (manifestPath string, appPath string, testDomain s
 }
 
 func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
+	logger := log.New(os.Stdout, "", 0)
+	logger.Printf("CF plugin built from git revision '%s'\n", config.SHA)
+
 	command := args[0]
 	if command == "CLI-MESSAGE-UNINSTALL" {
 		syscall.Exit(0)
 	}
-
-	logger := log.New(os.Stdout, "", 0)
 
 	manifestPath, appPath, testDomain, space := parseArgs(args)
 	pluginRequest := plugin.Request{
@@ -57,7 +58,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(1)
 	}
 
-	logger.Printf("Plugin built from '%s'", config.SHA)
+
 	logger.Println(p)
 	if err = p.Execute(cliConnection, logger); err != nil {
 		logger.Println(err)
