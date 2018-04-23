@@ -6,12 +6,12 @@ import (
 )
 
 type push struct {
-	check check
+	appsGetter AppsGetter
 }
 
-func NewPushPlanner(check check) push {
+func NewPushPlanner(appsGetter AppsGetter) push {
 	return push{
-		check: check,
+		appsGetter: appsGetter,
 	}
 }
 
@@ -19,7 +19,8 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 	candidateName := createCandidateAppName(application.Name)
 	candidateHost := createCandidateHostname(application.Name, request.Space)
 
-	if ok, stateError := p.check.IsCFInAGoodState(application.Name, request.TestDomain, candidateHost); !ok {
+	stateError := checkCFState(application.Name, request.TestDomain, candidateHost, p.appsGetter)
+	if stateError != nil {
 		err = stateError
 		return
 	}

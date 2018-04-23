@@ -3,11 +3,11 @@ package plugin
 import (
 	"testing"
 
+	"code.cloudfoundry.org/cli/cf/errors"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
-	"code.cloudfoundry.org/cli/plugin/models"
-	"code.cloudfoundry.org/cli/cf/errors"
 )
 
 type mockAppsGetter struct {
@@ -53,7 +53,7 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
 	}
 
-	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
+	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{{Name: candidateAppName}}, nil))
 
 	commands, err := promote.GetPlan(application, Request{
 		TestDomain: testDomain,
@@ -76,7 +76,7 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsNoOldApp(t *testing.T) {
 		plan.NewCfCommand("rename", candidateAppName, application.Name),
 	}
 
-	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
+	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{{Name: candidateAppName}}, nil))
 
 	commands, err := promote.GetPlan(application, Request{
 		TestDomain: testDomain,
@@ -107,6 +107,7 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing
 	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
 		{Name: "Ima a app"},
 		{Name: "Me 2 lol"},
+		{Name: candidateAppName},
 	}, nil))
 
 	commands, err := promote.GetPlan(application, Request{
@@ -139,9 +140,8 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldApp(t *testing.T) {
 	}
 
 	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
-		{
-			Name: application.Name,
-		},
+		{Name: application.Name},
+		{Name: candidateAppName},
 	}, nil))
 
 	commands, err := promote.GetPlan(application, Request{
@@ -168,9 +168,8 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldApp(t *testing.T) {
 	}
 
 	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
-		{
-			Name: application.Name,
-		},
+		{Name: application.Name},
+		{Name: candidateAppName},
 	}, nil))
 
 	commands, err := promote.GetPlan(application, Request{
@@ -203,12 +202,9 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
 	}
 
 	promote := NewPromotePlanner(newMockAppsGetter([]plugin_models.GetAppsModel{
-		{
-			Name: application.Name,
-		},
-		{
-			Name: createOldAppName(application.Name),
-		},
+		{Name: application.Name},
+		{Name: candidateAppName},
+		{Name: createOldAppName(application.Name)},
 	}, nil))
 
 	commands, err := promote.GetPlan(application, Request{
@@ -243,6 +239,9 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldAppAndAnEvenOlder(t *
 			Name: application.Name,
 		},
 		{
+			Name: candidateAppName,
+		},
+		{
 			Name: createOldAppName(application.Name),
 		},
 	}, nil))
@@ -254,7 +253,6 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldAppAndAnEvenOlder(t *
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)
 }
-
 
 func TestRenamesOldAppAndDeleteApp(t *testing.T) {
 	application := manifest.Application{
@@ -297,5 +295,3 @@ func TestRenamesOldAppWhenNoDeletePresent(t *testing.T) {
 	}
 	assert.Equal(t, expectedPlan, planRename)
 }
-
-

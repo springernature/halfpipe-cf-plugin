@@ -26,7 +26,7 @@ func TestGivesBackAPushPlan(t *testing.T) {
 		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-n", expectedApplicationHostname, "-d", testDomain),
 	}
 
-	push := NewPushPlanner(NewCheck(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil)))
+	push := NewPushPlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
@@ -55,7 +55,7 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath),
 	}
 
-	push := NewPushPlanner(NewCheck(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil)))
+	push := NewPushPlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
@@ -66,4 +66,27 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, commands, 1)
 	assert.Equal(t, expectedPlan, commands)
+}
+
+func TestGivesBackAnErrorIfInABadState(t *testing.T) {
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+	}
+	candidateAppName := createCandidateAppName(application.Name)
+
+	manifestPath := "path/to/manifest.yml"
+	appPath := "path/to/app.jar"
+	testDomain := "domain.com"
+	push := NewPushPlanner(newMockAppsGetter([]plugin_models.GetAppsModel{{Name: candidateAppName}}, nil))
+
+	commands, err := push.GetPlan(application, Request{
+		ManifestPath: manifestPath,
+		AppPath:      appPath,
+		TestDomain:   testDomain,
+	})
+
+	assert.NotNil(t, err)
+	assert.Equal(t, err, ErrAppNameExists(candidateAppName))
+	assert.Len(t, commands, 0)
 }

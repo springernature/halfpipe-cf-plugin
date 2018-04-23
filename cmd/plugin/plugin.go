@@ -46,7 +46,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	planner := plugin.NewPlanner(
-		plugin.NewPushPlanner(plugin.NewCheck(cliConnection)),
+		plugin.NewPushPlanner(cliConnection),
 		plugin.NewPromotePlanner(cliConnection),
 		plugin.NewDeletePlanner(cliConnection),
 		manifest.ReadAndMergeManifests,

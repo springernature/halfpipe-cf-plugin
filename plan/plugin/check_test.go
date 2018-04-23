@@ -11,52 +11,45 @@ func TestFailsIfCandidateAppNameIsAlreadyInUse(t *testing.T) {
 
 	appName := "app"
 
+	candidateAppName := createCandidateAppName("app")
 	apps := []plugin_models.GetAppsModel{
-		{Name: createCandidateAppName("app")},
+		{Name: candidateAppName},
 	}
 
-	check := NewCheck(newMockAppsGetter(apps, nil))
+	err := checkCFState(appName, "blah", "blah", newMockAppsGetter(apps, nil))
 
-	ok, _ := check.IsCFInAGoodState(appName, "blah", "blah")
-
-	assert.False(t, ok)
+	assert.Equal(t, err, ErrAppNameExists(candidateAppName))
 }
 
-func TestFailsIfDeleteAppnameIsThere(t *testing.T) {
-
+func TestFailsIfDeleteAppNameIsThere(t *testing.T) {
 	appName := "app"
-
+	deleteAppName := createDeleteName(appName, 0)
 	apps := []plugin_models.GetAppsModel{
-		{Name: createDeleteName(appName, 0)},
+		{Name: deleteAppName},
 	}
 
-	check := NewCheck(newMockAppsGetter(apps, nil))
+	err := checkCFState(appName, "blah", "blah", newMockAppsGetter(apps, nil))
 
-	ok, _ := check.IsCFInAGoodState(appName, "blah", "blah")
-
-	assert.False(t, ok)
+	assert.Equal(t, err, ErrAppNameExists(deleteAppName))
 }
 
-func TestFailsIfOldAppnameIsRunning(t *testing.T) {
-
+func TestFailsIfOldAppIsRunning(t *testing.T) {
 	appName := "app"
 
+	oldAppName := createOldAppName(appName)
 	apps := []plugin_models.GetAppsModel{
-		{Name: createOldAppName(appName), State: "running"},
+		{Name: oldAppName, State: "running"},
 	}
 
-	check := NewCheck(newMockAppsGetter(apps, nil))
+	err := checkCFState(appName, "blah", "blah", newMockAppsGetter(apps, nil))
 
-	ok, _ := check.IsCFInAGoodState(appName, "blah", "blah")
-
-	assert.False(t, ok)
+	assert.Equal(t, err, ErrAppRunning(oldAppName))
 }
 
 func TestFailsIfCandidateRouteIsAlreadyInUse(t *testing.T) {
 	appName := "my-app"
-	candidateAppName := createCandidateAppName(appName)
-
 	candidateHost := createCandidateHostname(appName, "dev")
+
 	apps := []plugin_models.GetAppsModel{
 		{Name: "app1", Routes: []plugin_models.GetAppsRouteSummary{{
 			Host:   candidateHost,
@@ -64,9 +57,7 @@ func TestFailsIfCandidateRouteIsAlreadyInUse(t *testing.T) {
 		}}},
 	}
 
-	check := NewCheck(newMockAppsGetter(apps, nil))
+	err := checkCFState(appName, "testdomain.com", candidateHost, newMockAppsGetter(apps, nil))
 
-	ok, _ := check.IsCFInAGoodState(candidateAppName, "testdomain.com", candidateHost)
-
-	assert.False(t, ok)
+	assert.Equal(t, err, ErrRouteInUse(candidateHost, "testdomain.com"))
 }
