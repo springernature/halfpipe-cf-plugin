@@ -14,7 +14,7 @@ func TestFailsIfDeleteAppNameIsThere(t *testing.T) {
 		{Name: deleteAppName},
 	}
 
-	err := checkCFState(appName, "blah", "blah", newMockAppsGetter(apps, nil))
+	err := checkCFState(appName, "blah", "blah", newMockAppsGetter().WithApps(apps))
 
 	assert.Equal(t, err, ErrAppNameExists(deleteAppName))
 }
@@ -27,7 +27,7 @@ func TestFailsIfOldAppIsRunning(t *testing.T) {
 		{Name: oldAppName, State: "running"},
 	}
 
-	err := checkCFState(appName, "blah", "blah", newMockAppsGetter(apps, nil))
+	err := checkCFState(appName, "blah", "blah", newMockAppsGetter().WithApps(apps))
 
 	assert.Equal(t, err, ErrAppRunning(oldAppName))
 }

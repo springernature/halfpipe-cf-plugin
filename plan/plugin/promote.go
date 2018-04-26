@@ -28,7 +28,13 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 	candidateAppName := createCandidateAppName(application.Name)
 
 	if !application.NoRoute {
-		plan = append(plan, addProdRoutes(application, candidateAppName)...)
+		domains, domainsErr := p.getDomainsInOrg()
+		if domainsErr != nil {
+			err = domainsErr
+			return
+		}
+
+		plan = append(plan, addProdRoutes(application, candidateAppName, domains)...)
 		plan = append(plan, removeTestRoute(application.Name, request.Space, request.TestDomain))
 	}
 
@@ -38,17 +44,48 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 	return
 }
 
-func addProdRoutes(application manifest.Application, candidateAppName string) (commands []plan.Command) {
-	for _, route := range application.Routes {
-		parts := strings.Split(route, ".")
-		hostname := parts[0]
-		domain := strings.Join(parts[1:], ".")
+func (p promote) getDomainsInOrg() (domains []string, err error) {
+	output, err := p.appsGetter.CliCommandWithoutTerminalOutput("domains")
+	if err != nil {
+		return
+	}
 
-		commands = append(commands,
-			plan.NewCfCommand("map-route", candidateAppName, domain, "-n", hostname),
-		)
+	// First two lines ar
+	// Getting domains in org myOrg as myUser...
+	//  name                   					status   type
+	for _, domainLine := range output[2:] {
+		domain := strings.Split(domainLine, " ")[0]
+		domains = append(domains, strings.TrimSpace(domain))
 	}
 	return
+}
+
+func addProdRoutes(application manifest.Application, candidateAppName string, domains []string) (commands []plan.Command) {
+	for _, route := range application.Routes {
+		if routeIsDomain(route, domains) {
+			commands = append(commands,
+				plan.NewCfCommand("map-route", candidateAppName, route),
+			)
+		} else {
+			parts := strings.Split(route, ".")
+			hostname := parts[0]
+			domain := strings.Join(parts[1:], ".")
+
+			commands = append(commands,
+				plan.NewCfCommand("map-route", candidateAppName, domain, "-n", hostname),
+			)
+		}
+	}
+	return
+}
+
+func routeIsDomain(route string, domains []string) bool {
+	for _, domain := range domains {
+		if strings.TrimSpace(domain) == strings.TrimSpace(route) {
+			return true
+		}
+	}
+	return false
 }
 
 func removeTestRoute(appName string, space string, testDomain string) plan.Command {

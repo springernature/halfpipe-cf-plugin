@@ -7,9 +7,9 @@ import (
 	"syscall"
 
 	cfPlugin "code.cloudfoundry.org/cli/plugin"
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/springernature/halfpipe-cf-plugin/plan/plugin"
+	"code.cloudfoundry.org/cli/util/manifest"
 )
 
 type Halfpipe struct{}

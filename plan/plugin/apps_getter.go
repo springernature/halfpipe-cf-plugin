@@ -4,4 +4,5 @@ import "code.cloudfoundry.org/cli/plugin/models"
 
 type AppsGetter interface {
 	GetApps() ([]plugin_models.GetAppsModel, error)
+	CliCommandWithoutTerminalOutput(args ...string) ([]string, error)
 }

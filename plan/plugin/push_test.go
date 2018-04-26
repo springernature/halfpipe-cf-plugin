@@ -3,7 +3,6 @@ package plugin
 import (
 	"testing"
 
-	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +25,7 @@ func TestGivesBackAPushPlan(t *testing.T) {
 		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-n", expectedApplicationHostname, "-d", testDomain),
 	}
 
-	push := NewPushPlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
+	push := NewPushPlanner(newMockAppsGetter())
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
@@ -55,7 +54,7 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath),
 	}
 
-	push := NewPushPlanner(newMockAppsGetter([]plugin_models.GetAppsModel{}, nil))
+	push := NewPushPlanner(newMockAppsGetter())
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
