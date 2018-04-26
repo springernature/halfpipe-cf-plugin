@@ -67,26 +67,3 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 	assert.Len(t, commands, 1)
 	assert.Equal(t, expectedPlan, commands)
 }
-
-func TestGivesBackAnErrorIfInABadState(t *testing.T) {
-	application := manifest.Application{
-		Name:    "my-app",
-		NoRoute: true,
-	}
-	candidateAppName := createCandidateAppName(application.Name)
-
-	manifestPath := "path/to/manifest.yml"
-	appPath := "path/to/app.jar"
-	testDomain := "domain.com"
-	push := NewPushPlanner(newMockAppsGetter([]plugin_models.GetAppsModel{{Name: candidateAppName}}, nil))
-
-	commands, err := push.GetPlan(application, Request{
-		ManifestPath: manifestPath,
-		AppPath:      appPath,
-		TestDomain:   testDomain,
-	})
-
-	assert.NotNil(t, err)
-	assert.Equal(t, err, ErrAppNameExists(candidateAppName))
-	assert.Len(t, commands, 0)
-}

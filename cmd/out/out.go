@@ -39,7 +39,7 @@ func main() {
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")
-	case config.PUSH, config.PROMOTE, config.DELETE:
+	case config.PUSH, config.PROMOTE, config.DELETE, config.CLEANUP:
 		p, err = resource.NewPlanner(manifest.ReadAndMergeManifests, manifest.WriteApplicationManifest).Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))

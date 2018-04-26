@@ -48,7 +48,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	planner := plugin.NewPlanner(
 		plugin.NewPushPlanner(cliConnection),
 		plugin.NewPromotePlanner(cliConnection),
-		plugin.NewDeletePlanner(cliConnection),
+		plugin.NewCleanupPlanner(cliConnection),
 		manifest.ReadAndMergeManifests,
 	)
 
@@ -77,6 +77,9 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 			},
 			{
 				Name: config.DELETE,
+			},
+			{
+				Name: config.CLEANUP,
 			},
 		},
 	}

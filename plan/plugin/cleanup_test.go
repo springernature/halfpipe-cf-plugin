@@ -28,7 +28,7 @@ func newMockAppGetter(apps plugin_models.GetAppModel, error error) mockAppGetter
 
 func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 	expectedError := errors.New("error")
-	del := NewDeletePlanner(newMockAppGetter(plugin_models.GetAppModel{}, expectedError))
+	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{}, expectedError))
 
 	_, err := del.GetPlan(manifest.Application{}, Request{})
 
@@ -36,7 +36,7 @@ func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 }
 
 func TestEmptyPlanIfNoOldApp(t *testing.T) {
-	del := NewDeletePlanner(newMockAppGetter(plugin_models.GetAppModel{}, errors.New("App my-app-DELETE not found")))
+	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{}, errors.New("App my-app-DELETE not found")))
 
 	plan, err := del.GetPlan(manifest.Application{
 		Name: "my-app",
@@ -56,7 +56,7 @@ func TestGivesBackADeletePlan(t *testing.T) {
 		plan.NewCfCommand("delete", expectedApplicationName, "-f"),
 	}
 
-	del := NewDeletePlanner(newMockAppGetter(plugin_models.GetAppModel{Name: "my-app-DELETE"}, nil))
+	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{Name: "my-app-DELETE"}, nil))
 
 	commands, err := del.GetPlan(application, Request{})
 

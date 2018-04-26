@@ -6,11 +6,11 @@ import (
 	"fmt"
 )
 
-type delete struct {
+type cleanup struct {
 	appGetter AppGetter
 }
 
-func (p delete) GetPlan(application manifest.Application, request Request) (pl plan.Plan, err error) {
+func (p cleanup) GetPlan(application manifest.Application, request Request) (pl plan.Plan, err error) {
 	deleteName := createDeleteName(application.Name, 0)
 
 	deletableApp, err := p.thereIsAnAppToBeDeleted(deleteName)
@@ -29,7 +29,7 @@ func (p delete) GetPlan(application manifest.Application, request Request) (pl p
 	return
 }
 
-func (p delete) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err error) {
+func (p cleanup) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err error) {
 	// This is messy.
 	// cliConnection just errors if there is no app.
 	// But it doesnt expose a error type for that case, soooooo, string match!
@@ -46,8 +46,8 @@ func (p delete) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err err
 	return
 }
 
-func NewDeletePlanner(appGetter AppGetter) Planner {
-	return delete{
+func NewCleanupPlanner(appGetter AppGetter) Planner {
+	return cleanup{
 		appGetter: appGetter,
 	}
 }
