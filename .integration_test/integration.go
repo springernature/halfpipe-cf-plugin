@@ -27,21 +27,21 @@ func main() {
 	// Run 1
 	push()
 	promote()
-	delete()
+	cleanup()
 
 	// Run 2
 	push()
 	promote()
-	delete()
+	cleanup()
 
 	// Run 3
 	push()
 	promote()
-	delete()
+	cleanup()
 }
 
-func delete() {
-	runOutWithCommand("halfpipe-delete")
+func cleanup() {
+	runOutWithCommand("halfpipe-cleanup")
 }
 
 func push() {
