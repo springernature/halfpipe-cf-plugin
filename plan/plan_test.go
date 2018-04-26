@@ -42,9 +42,9 @@ func TestPlan_String(t *testing.T) {
 		NewCfCommand("delete"),
 	}
 
-	expected := `Planned execution
-	* cf push
-	* cf delete
+	expected := `# Planned execution
+#	* cf push
+#	* cf delete
 `
 	assert.Equal(t, expected, p.String())
 }

@@ -12,8 +12,8 @@ type Command interface {
 }
 
 type cfCommand struct {
-	command string
-	args    []string
+	command      string
+	args         []string
 }
 
 func NewCfCommand(args ...string) Command {
