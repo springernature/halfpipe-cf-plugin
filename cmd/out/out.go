@@ -13,13 +13,16 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
 	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/spf13/afero"
 )
 
 func readGitRefFile(gitRefPath string) (gitRef string, err error) {
-	bytes, err := ioutil.ReadFile(gitRefPath)
+	fs := afero.Afero{Fs: afero.NewOsFs()}
+	bytes, err := fs.ReadFile(gitRefPath)
 	if err != nil {
 		return
 	}
+
 	gitRef = string(bytes)
 	return
 }
