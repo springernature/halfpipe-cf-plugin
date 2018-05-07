@@ -15,6 +15,15 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
+func readGitRefFile(gitRefPath string) (gitRef string, err error) {
+	bytes, err := ioutil.ReadFile(gitRefPath)
+	if err != nil {
+		return
+	}
+	gitRef = string(bytes)
+	return
+}
+
 func main() {
 	concourseRoot := os.Args[1]
 
@@ -35,12 +44,21 @@ func main() {
 		syscall.Exit(1)
 	}
 
+	var gitRef = ""
+	if request.Params.GitRefPath != "" {
+		gitRef, err = readGitRefFile(request.Params.GitRefPath)
+		if err != nil {
+			logger.Println(err)
+			syscall.Exit(1)
+		}
+	}
+
 	var p plan.Plan
 	switch request.Params.Command {
 	case "":
 		panic("params.command must not be empty")
 	case config.PUSH, config.PROMOTE, config.DELETE, config.CLEANUP:
-		p, err = resource.NewPlanner(manifest.ReadAndMergeManifests, manifest.WriteApplicationManifest).Plan(request, concourseRoot)
+		p, err = resource.NewPlanner(manifest.ReadAndMergeManifests, manifest.WriteApplicationManifest).Plan(request, concourseRoot, gitRef)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))
 	}

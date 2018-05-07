@@ -19,4 +19,5 @@ type Params struct {
 	AppPath      string
 	TestDomain   string
 	Vars         map[string]string
+	GitRefPath   string
 }

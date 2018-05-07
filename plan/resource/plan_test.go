@@ -46,7 +46,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 			Username: "d",
 			Password: "e",
 		},
-	}, "")
+	}, "", "")
 	assert.Equal(t, NewErrEmptyParamValue("manifestPath").Error(), err.Error())
 
 	_, err = NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError).Plan(Request{
@@ -56,7 +56,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 			AppPath:      "",
 			TestDomain:   "a",
 		},
-	}, "")
+	}, "", "")
 	assert.Equal(t, NewErrEmptySourceValue("space").Error(), err.Error())
 }
 
@@ -75,7 +75,7 @@ func TestReturnsErrorIfWeFailToReadManifest(t *testing.T) {
 
 	push := NewPlanner(manifestReader, manifestWriterWithoutError)
 
-	_, err := push.Plan(validRequest, concourseRoot)
+	_, err := push.Plan(validRequest, concourseRoot, "")
 	assert.Equal(t, expectedError, err)
 }
 
@@ -93,7 +93,7 @@ func TestReturnsErrorIfWeFailToWriteManifest(t *testing.T) {
 	}
 	push := NewPlanner(manifestReaderWithOneApp, manifestWriter)
 
-	_, err := push.Plan(validRequest, concourseRoot)
+	_, err := push.Plan(validRequest, concourseRoot, "")
 
 	assert.Equal(t, expectedError, err)
 }
@@ -135,7 +135,7 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 		},
 	}
 
-	_, err := push.Plan(validPromoteRequest, concourseRoot)
+	_, err := push.Plan(validPromoteRequest, concourseRoot, "")
 
 	assert.Nil(t, err)
 	assert.False(t, manifestReaderCalled)
@@ -147,9 +147,11 @@ func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *test
 		Name: "MyApp",
 	}
 
+	expectedVars := validRequest.Params.Vars
+	expectedVars["GIT_REVISION"] = "myGitRef"
 	expectedManifest := manifest.Application{
 		Name:                 "MyApp",
-		EnvironmentVariables: validRequest.Params.Vars,
+		EnvironmentVariables: expectedVars,
 	}
 
 
@@ -166,7 +168,7 @@ func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *test
 
 	push := NewPlanner(manifestReader, manifestWriter)
 
-	p, err := push.Plan(validRequest, "")
+	p, err := push.Plan(validRequest, "", "myGitRef")
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedManifest, actualManifest)
@@ -192,6 +194,7 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 			"VAR2": "bb",
 			"VAR3": "c",
 			"VAR4": "cc",
+			"GIT_REVISION": "gitRef",
 		},
 	}
 	var actualManifest manifest.Application
@@ -205,7 +208,7 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 	}
 	push := NewPlanner(manifestReader, manifestWriter)
 
-	p, err := push.Plan(validRequest, "")
+	p, err := push.Plan(validRequest, "", "gitRef")
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedManifest, actualManifest)
