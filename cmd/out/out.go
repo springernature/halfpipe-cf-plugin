@@ -14,12 +14,11 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/spf13/afero"
-	"path"
 )
 
-func readGitRefFile(concourseRoot, gitRefPath string) (gitRef string, err error) {
+func readGitRefFile(gitRefPath string) (gitRef string, err error) {
 	fs := afero.Afero{Fs: afero.NewOsFs()}
-	bytes, err := fs.ReadFile(path.Join(concourseRoot, gitRefPath))
+	bytes, err := fs.ReadFile(gitRefPath)
 	if err != nil {
 		return
 	}
@@ -50,7 +49,7 @@ func main() {
 
 	var gitRef = ""
 	if request.Params.GitRefPath != "" {
-		gitRef, err = readGitRefFile(concourseRoot, request.Params.GitRefPath)
+		gitRef, err = readGitRefFile(request.Params.GitRefPath)
 		if err != nil {
 			logger.Println(err)
 			syscall.Exit(1)
