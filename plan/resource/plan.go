@@ -8,7 +8,6 @@ import (
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/config"
-	"strings"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -24,7 +23,7 @@ var NewErrEmptySourceValue = func(fieldName string) error {
 }
 
 type Plan interface {
-	Plan(request Request, concourseRoot string, gitRef string) (plan plan.Plan, err error)
+	Plan(request Request, concourseRoot string) (plan plan.Plan, err error)
 }
 
 type planner struct {
@@ -89,7 +88,7 @@ func check(request Request) (err error) {
 	return
 }
 
-func (p planner) Plan(request Request, concourseRoot string, gitRef string) (pl plan.Plan, err error) {
+func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err error) {
 	if err = check(request); err != nil {
 		return
 	}
@@ -97,7 +96,7 @@ func (p planner) Plan(request Request, concourseRoot string, gitRef string) (pl 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
 
 	if request.Params.Command == config.PUSH {
-		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars, gitRef); err != nil {
+		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
 			return
 		}
 	}
@@ -114,37 +113,34 @@ func (p planner) Plan(request Request, concourseRoot string, gitRef string) (pl 
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,
 			"-space", request.Source.Space,
-			"-env", strings.Join([]string{"GIT_REVISION", ""}, "="),
 		),
 	}
 
 	return
 }
 
-func (p planner) updateManifestWithVars(manifestPath string, vars map[string]string, gitRef string) (err error) {
-	apps, e := p.manifestReader(manifestPath)
-	if e != nil {
-		err = e
-		return
-	}
+func (p planner) updateManifestWithVars(manifestPath string, vars map[string]string) (err error) {
+	if len(vars) > 0 {
+		apps, e := p.manifestReader(manifestPath)
+		if e != nil {
+			err = e
+			return
+		}
 
-	// We just assume the first app in the manifest is the app under deployment.
-	// We lint that this is the case in the halfpipe linter.
-	app := apps[0]
-	if len(app.EnvironmentVariables) == 0 {
-		app.EnvironmentVariables = map[string]string{}
-	}
+		// We just assume the first app in the manifest is the app under deployment.
+		// We lint that this is the case in the halfpipe linter.
+		app := apps[0]
+		if len(app.EnvironmentVariables) == 0 {
+			app.EnvironmentVariables = map[string]string{}
+		}
 
-	for key, value := range vars {
-		app.EnvironmentVariables[key] = value
-	}
+		for key, value := range vars {
+			app.EnvironmentVariables[key] = value
+		}
 
-	if gitRef != "" {
-		app.EnvironmentVariables["GIT_REVISION"] = gitRef
-	}
-
-	if err = p.manifestWriter(app, manifestPath); err != nil {
-		return
+		if err = p.manifestWriter(app, manifestPath); err != nil {
+			return
+		}
 	}
 	return
 }
