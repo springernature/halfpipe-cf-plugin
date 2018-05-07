@@ -31,13 +31,13 @@ resources:
 
 - name: cf
   type: cf-resource
+  check_every: 5s
   source:
     api: ((cloudfoundry.api-gcp))
     org: engineering-enablement
     password: ((cloudfoundry.password))
     space: integration_test
     username: ((cloudfoundry.username))
-
 
 jobs:
 - name: run test.sh
@@ -91,14 +91,14 @@ jobs:
       appPath: halfpipe-cf-plugin/.integration_test
       command: halfpipe-push
       gitRefPath: halfpipe-cf-plugin/.git/ref
-      manifestPath: halfpipe-cf-plugin/.integration_test/manifest-dev.yml
+      manifestPath: halfpipe-cf-plugin/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
   - put: cf
     params:
       appPath: halfpipe-cf-plugin/.integration_test
       command: halfpipe-promote
       gitRefPath: halfpipe-cf-plugin/.git/ref
-      manifestPath: halfpipe-cf-plugin/.integration_test/manifest-dev.yml
+      manifestPath: halfpipe-cf-plugin/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
   ensure:
     put: cf
@@ -106,7 +106,7 @@ jobs:
       appPath: halfpipe-cf-plugin/.integration_test
       command: halfpipe-cleanup
       gitRefPath: halfpipe-cf-plugin/.git/ref
-      manifestPath: halfpipe-cf-plugin/.integration_test/manifest-dev.yml
+      manifestPath: halfpipe-cf-plugin/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
 
 - name: Tag docker image as stable
