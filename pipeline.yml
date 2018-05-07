@@ -1,4 +1,11 @@
 # Generated using halfpipe cli version 1.12.0
+resource_types:
+- name: cf-resource
+  type: docker-image
+  source:
+    repository: platformengineering/cf-resource
+    tag: dev
+
 resources:
 - name: halfpipe-cf-plugin
   type: git
@@ -6,12 +13,31 @@ resources:
     private_key: ((github.private_key))
     uri: git@github.com:springernature/halfpipe-cf-plugin.git
 
-- name: docker-registry
+- name: docker-registry-image-stable
   type: docker-image
   source:
     password: ((docker-hub-pe.password))
     repository: platformengineering/cf-resource
     username: platformengineering
+    tag: stable
+
+- name: docker-registry-image-dev
+  type: docker-image
+  source:
+    password: ((docker-hub-pe.password))
+    repository: platformengineering/cf-resource
+    username: platformengineering
+    tag: dev
+
+- name: cf
+  type: cf-resource
+  source:
+    api: ((cloudfoundry.api-gcp))
+    org: engineering-enablement
+    password: ((cloudfoundry.password))
+    space: integration_test
+    username: ((cloudfoundry.username))
+
 
 jobs:
 - name: run test.sh
@@ -45,51 +71,52 @@ jobs:
     passed:
     - run test.sh
     trigger: true
-  - put: docker-registry
+  - put: docker-registry-image-dev
     params:
       build: halfpipe-cf-plugin
       tag: halfpipe-cf-plugin/.docker-dev-tag
 
-
-- name: Run smoke tests in dev docker image
+- name: Test resource
   serial: true
   plan:
   - get: halfpipe-cf-plugin
     passed:
     - Push dev docker image
+  - get: docker-registry-image-dev
+    passed:
+    - Push dev docker image
     trigger: true
-  - task: run
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: platformengineering/cf-resource
-          tag: dev
-      run:
-        path: /bin/sh
-        args:
-        - -ec
-        - |
-          ./integration_test.sh
-        dir: halfpipe-cf-plugin
-      params:
-        API: ((cloudfoundry.api-gcp))
-        USERNAME: ((cloudfoundry.username))
-        PASSWORD: ((cloudfoundry.password))
-        ORG: engineering-enablement
-        SPACE: integration_test
-      inputs:
-      - name: halfpipe-cf-plugin
+  - put: cf
+    params:
+      appPath: halfpipe-cf-plugin/.integration_test
+      command: halfpipe-push
+      gitRefPath: halfpipe-cf-plugin/.git/ref
+      manifestPath: halfpipe-cf-plugin/.integration_test/manifest-dev.yml
+      testDomain: apps.public.gcp.springernature.io
+  - put: cf
+    params:
+      appPath: halfpipe-cf-plugin/.integration_test
+      command: halfpipe-promote
+      gitRefPath: halfpipe-cf-plugin/.git/ref
+      manifestPath: halfpipe-cf-plugin/.integration_test/manifest-dev.yml
+      testDomain: apps.public.gcp.springernature.io
+  ensure:
+    put: cf
+    params:
+      appPath: halfpipe-cf-plugin/.integration_test
+      command: halfpipe-cleanup
+      gitRefPath: halfpipe-cf-plugin/.git/ref
+      manifestPath: halfpipe-cf-plugin/.integration_test/manifest-dev.yml
+      testDomain: apps.public.gcp.springernature.io
 
 - name: Tag docker image as stable
   serial: true
   plan:
   - get: halfpipe-cf-plugin
     passed:
-    - Run smoke tests in dev docker image
+    - Test resource
     trigger: true
-  - put: docker-registry
+  - put: docker-registry-image-stable
     params:
       build: halfpipe-cf-plugin
       tag: halfpipe-cf-plugin/.docker-stable-tag
