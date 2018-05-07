@@ -100,6 +100,15 @@
   version = "v1.0.5"
 
 [[projects]]
+  name = "github.com/spf13/afero"
+  packages = [
+    ".",
+    "mem"
+  ]
+  revision = "63644898a8da0bc22138abf860edaf5277b6102e"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
   revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
@@ -136,8 +145,12 @@
     "internal/gen",
     "internal/language",
     "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
     "language",
-    "unicode/cldr"
+    "transform",
+    "unicode/cldr",
+    "unicode/norm"
   ]
   revision = "b7ef84aaf62aa3e70962625c80a571ae7c17cb40"
 
@@ -151,6 +164,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bf682f08a84a20f135869ab14304b542fdd7ed0ae75f4646d32f00e8a1afe4c4"
+  inputs-digest = "b1a71e8d3188e6d5f696dfc50a7c441f4c7f0a0027fd6145b4b9eba8b111e44e"
   solver-name = "gps-cdcl"
   solver-version = 1
