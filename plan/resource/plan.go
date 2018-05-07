@@ -8,7 +8,6 @@ import (
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/config"
-	"strings"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -114,7 +113,6 @@ func (p planner) Plan(request Request, concourseRoot string, gitRef string) (pl 
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,
 			"-space", request.Source.Space,
-			"-env", strings.Join([]string{"GIT_REVISION", ""}, "="),
 		),
 	}
 
