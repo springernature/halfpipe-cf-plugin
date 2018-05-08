@@ -1,4 +1,3 @@
-# Generated using halfpipe cli version 1.12.0
 resource_types:
 - name: cf-resource
   type: docker-image
