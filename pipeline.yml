@@ -6,7 +6,7 @@ resource_types:
     tag: dev
 
 resources:
-- name: halfpipe-cf-plugin
+- name: git
   type: git
   source:
     private_key: ((github.private_key))
@@ -42,7 +42,7 @@ jobs:
 - name: run test.sh
   serial: true
   plan:
-  - get: halfpipe-cf-plugin
+  - get: git
     trigger: true
   - task: run
     config:
@@ -59,26 +59,26 @@ jobs:
         args:
         - -ec
         - ./test.sh
-        dir: halfpipe-cf-plugin
+        dir: git
       inputs:
-      - name: halfpipe-cf-plugin
+      - name: git
 
 - name: Push dev docker image
   serial: true
   plan:
-  - get: halfpipe-cf-plugin
+  - get: git
     passed:
     - run test.sh
     trigger: true
   - put: docker-registry-image-dev
     params:
-      build: halfpipe-cf-plugin
-      tag: halfpipe-cf-plugin/.docker-dev-tag
+      build: git
+      tag: git/.docker-dev-tag
 
 - name: Test resource
   serial: true
   plan:
-  - get: halfpipe-cf-plugin
+  - get: git
     passed:
     - Push dev docker image
   - get: docker-registry-image-dev
@@ -87,35 +87,35 @@ jobs:
     trigger: true
   - put: cf
     params:
-      appPath: halfpipe-cf-plugin/.integration_test
+      appPath: git/.integration_test
       command: halfpipe-push
-      gitRefPath: halfpipe-cf-plugin/.git/ref
-      manifestPath: halfpipe-cf-plugin/.integration_test/manifest.yml
+      gitRefPath: git/.git/ref
+      manifestPath: git/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
   - put: cf
     params:
-      appPath: halfpipe-cf-plugin/.integration_test
+      appPath: git/.integration_test
       command: halfpipe-promote
-      gitRefPath: halfpipe-cf-plugin/.git/ref
-      manifestPath: halfpipe-cf-plugin/.integration_test/manifest.yml
+      gitRefPath: git/.git/ref
+      manifestPath: git/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
   ensure:
     put: cf
     params:
-      appPath: halfpipe-cf-plugin/.integration_test
+      appPath: git/.integration_test
       command: halfpipe-cleanup
-      gitRefPath: halfpipe-cf-plugin/.git/ref
-      manifestPath: halfpipe-cf-plugin/.integration_test/manifest.yml
+      gitRefPath: git/.git/ref
+      manifestPath: git/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
 
 - name: Tag docker image as stable
   serial: true
   plan:
-  - get: halfpipe-cf-plugin
+  - get: git
     passed:
     - Test resource
     trigger: true
   - put: docker-registry-image-stable
     params:
-      build: halfpipe-cf-plugin
-      tag: halfpipe-cf-plugin/.docker-stable-tag
+      build: git
+      tag: git/.docker-stable-tag

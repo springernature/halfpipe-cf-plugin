@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/spf13/afero"
 )
 
 var validRequest = Request{
@@ -38,7 +39,8 @@ var manifestWriterWithoutError = func(application manifest.Application, filePath
 }
 
 func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
-	_, err := NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError).Plan(Request{
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+	_, err := NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError, fs).Plan(Request{
 		Source: Source{
 			API:      "a",
 			Org:      "b",
@@ -49,7 +51,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 	}, "")
 	assert.Equal(t, NewErrEmptyParamValue("manifestPath").Error(), err.Error())
 
-	_, err = NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError).Plan(Request{
+	_, err = NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError, fs).Plan(Request{
 		Params: Params{
 			Command:      config.PUSH,
 			ManifestPath: "f",
@@ -61,6 +63,8 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 }
 
 func TestReturnsErrorIfWeFailToReadManifest(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+
 	expectedError := errors.New("Shiied")
 
 	concourseRoot := "/tmp/some/path"
@@ -73,13 +77,15 @@ func TestReturnsErrorIfWeFailToReadManifest(t *testing.T) {
 		return
 	}
 
-	push := NewPlanner(manifestReader, manifestWriterWithoutError)
+	push := NewPlanner(manifestReader, manifestWriterWithoutError, fs)
 
 	_, err := push.Plan(validRequest, concourseRoot)
 	assert.Equal(t, expectedError, err)
 }
 
 func TestReturnsErrorIfWeFailToWriteManifest(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+
 	expectedError := errors.New("Shiied")
 
 	concourseRoot := "/tmp/some/path"
@@ -91,7 +97,7 @@ func TestReturnsErrorIfWeFailToWriteManifest(t *testing.T) {
 		}
 		return nil
 	}
-	push := NewPlanner(manifestReaderWithOneApp, manifestWriter)
+	push := NewPlanner(manifestReaderWithOneApp, manifestWriter, fs)
 
 	_, err := push.Plan(validRequest, concourseRoot)
 
@@ -99,6 +105,8 @@ func TestReturnsErrorIfWeFailToWriteManifest(t *testing.T) {
 }
 
 func TestDoesntWriteManifestIfNotPush(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+
 	concourseRoot := "/tmp/some/path"
 
 	var manifestReaderCalled = false
@@ -113,7 +121,7 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 		return nil
 	}
 
-	push := NewPlanner(manifestReader, manifestWriter)
+	push := NewPlanner(manifestReader, manifestWriter, fs)
 
 	validPromoteRequest := Request{
 		Source: Source{
@@ -143,6 +151,8 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 }
 
 func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+
 	applicationManifest := manifest.Application{
 		Name: "MyApp",
 	}
@@ -151,7 +161,6 @@ func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *test
 		Name:                 "MyApp",
 		EnvironmentVariables: validRequest.Params.Vars,
 	}
-
 
 	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
 		return []manifest.Application{applicationManifest}, nil
@@ -164,7 +173,7 @@ func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *test
 		return nil
 	}
 
-	push := NewPlanner(manifestReader, manifestWriter)
+	push := NewPlanner(manifestReader, manifestWriter, fs)
 
 	p, err := push.Plan(validRequest, "")
 
@@ -176,6 +185,8 @@ func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *test
 }
 
 func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+
 	applicationManifest := manifest.Application{
 		Name: "MyApp",
 		EnvironmentVariables: map[string]string{
@@ -203,7 +214,7 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 		actualManifest = application
 		return nil
 	}
-	push := NewPlanner(manifestReader, manifestWriter)
+	push := NewPlanner(manifestReader, manifestWriter, fs)
 
 	p, err := push.Plan(validRequest, "")
 
@@ -213,3 +224,78 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 	assert.Contains(t, p[0].String(), "cf login")
 	assert.Contains(t, p[1].String(), "cf halfpipe-push")
 }
+
+func TestErrorsIfTheGitRefPathIsSpecifiedButDoesntExist(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+
+	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
+		return []manifest.Application{{}}, nil
+	}
+	manifestWriter := func(application manifest.Application, filePath string) error {
+		return nil
+	}
+
+	push := NewPlanner(manifestReader, manifestWriter, fs)
+	request := Request{
+		Source: Source{
+			API:      "a",
+			Org:      "b",
+			Space:    "c",
+			Username: "d",
+			Password: "e",
+		},
+		Params: Params{
+			ManifestPath: "manifest.yml",
+			GitRefPath:   "git/.git/ref",
+			AppPath:      "",
+			TestDomain:   "kehe.com",
+			Command:      config.PUSH,
+		},
+	}
+	_, err := push.Plan(request, "/some/path")
+
+	assert.Error(t, err)
+}
+
+func TestPutsGitRefInTheManifest(t *testing.T) {
+	fs := afero.Afero{Fs: afero.NewMemMapFs()}
+	concourseRoot := "/some/path"
+	gitRefPath := "git/.git/ref"
+	gitRef := "wiiiie"
+	fs.WriteFile(path.Join(concourseRoot, gitRefPath), []byte(gitRef), 0700)
+
+	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
+		return []manifest.Application{{}}, nil
+	}
+
+	var writtenManifest manifest.Application
+	manifestWriter := func(application manifest.Application, filePath string) error {
+		writtenManifest = application
+		return nil
+	}
+
+	push := NewPlanner(manifestReader, manifestWriter, fs)
+
+	request := Request{
+		Source: Source{
+			API:      "a",
+			Org:      "b",
+			Space:    "c",
+			Username: "d",
+			Password: "e",
+		},
+		Params: Params{
+			ManifestPath: "manifest.yml",
+			GitRefPath:   gitRefPath,
+			AppPath:      "",
+			TestDomain:   "kehe.com",
+			Command:      config.PUSH,
+		},
+	}
+
+	_, err := push.Plan(request, concourseRoot)
+
+	assert.Nil(t, err)
+	assert.Equal(t, writtenManifest.EnvironmentVariables["GIT_REVISION"], gitRef)
+}
+

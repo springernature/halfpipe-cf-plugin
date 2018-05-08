@@ -13,6 +13,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
 	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/spf13/afero"
 )
 
 func main() {
@@ -40,7 +41,11 @@ func main() {
 	case "":
 		panic("params.command must not be empty")
 	case config.PUSH, config.PROMOTE, config.DELETE, config.CLEANUP:
-		p, err = resource.NewPlanner(manifest.ReadAndMergeManifests, manifest.WriteApplicationManifest).Plan(request, concourseRoot)
+		p, err = resource.NewPlanner(
+			manifest.ReadAndMergeManifests,
+			manifest.WriteApplicationManifest,
+			afero.Afero{Fs: afero.NewOsFs()},
+		).Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))
 	}

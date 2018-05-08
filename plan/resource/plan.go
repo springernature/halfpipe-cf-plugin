@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/spf13/afero"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -29,12 +30,14 @@ type Plan interface {
 type planner struct {
 	manifestReader func(pathToManifest string) ([]manifest.Application, error)
 	manifestWriter func(application manifest.Application, filePath string) error
+	fs             afero.Afero
 }
 
-func NewPlanner(manifestReader func(pathToManifest string) ([]manifest.Application, error), manifestWriter func(application manifest.Application, filePath string) error) Plan {
+func NewPlanner(manifestReader func(pathToManifest string) ([]manifest.Application, error), manifestWriter func(application manifest.Application, filePath string) error, fs afero.Afero) Plan {
 	return planner{
 		manifestReader: manifestReader,
 		manifestWriter: manifestWriter,
+		fs:             fs,
 	}
 }
 
@@ -94,9 +97,13 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 	}
 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
+	var fullGitRefPath string
+	if request.Params.GitRefPath != "" {
+		fullGitRefPath = path.Join(concourseRoot, request.Params.GitRefPath)
+	}
 
 	if request.Params.Command == config.PUSH {
-		if err = p.updateManifestWithVars(fullManifestPath, request.Params.Vars); err != nil {
+		if err = p.updateManifestWithVars(fullManifestPath, fullGitRefPath, request.Params.Vars); err != nil {
 			return
 		}
 	}
@@ -119,8 +126,8 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 	return
 }
 
-func (p planner) updateManifestWithVars(manifestPath string, vars map[string]string) (err error) {
-	if len(vars) > 0 {
+func (p planner) updateManifestWithVars(manifestPath string, gitRefPath string, vars map[string]string) (err error) {
+	if len(vars) > 0 || gitRefPath != "" {
 		apps, e := p.manifestReader(manifestPath)
 		if e != nil {
 			err = e
@@ -138,9 +145,27 @@ func (p planner) updateManifestWithVars(manifestPath string, vars map[string]str
 			app.EnvironmentVariables[key] = value
 		}
 
+		if gitRefPath != "" {
+			ref, errRead := p.readGitRef(gitRefPath)
+			if errRead != nil {
+				err = errRead
+				return
+			}
+			app.EnvironmentVariables["GIT_REVISION"] = ref
+		}
+
 		if err = p.manifestWriter(app, manifestPath); err != nil {
 			return
 		}
 	}
+	return
+}
+
+func (p planner) readGitRef(gitRefPath string) (ref string, err error) {
+	bytes, err := p.fs.ReadFile(gitRefPath)
+	if err != nil {
+		return
+	}
+	ref = string(bytes)
 	return
 }
