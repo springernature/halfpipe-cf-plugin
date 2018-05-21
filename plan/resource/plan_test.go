@@ -261,7 +261,7 @@ func TestPutsGitRefInTheManifest(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
 	concourseRoot := "/some/path"
 	gitRefPath := "git/.git/ref"
-	gitRef := "wiiiie"
+	gitRef := "wiiiie\n"
 	fs.WriteFile(path.Join(concourseRoot, gitRefPath), []byte(gitRef), 0700)
 
 	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
@@ -296,6 +296,6 @@ func TestPutsGitRefInTheManifest(t *testing.T) {
 	_, err := push.Plan(request, concourseRoot)
 
 	assert.Nil(t, err)
-	assert.Equal(t, writtenManifest.EnvironmentVariables["GIT_REVISION"], gitRef)
+	assert.Equal(t, writtenManifest.EnvironmentVariables["GIT_REVISION"], "wiiiie")
 }
 

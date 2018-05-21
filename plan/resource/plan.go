@@ -9,6 +9,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/spf13/afero"
+	"strings"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -166,6 +167,6 @@ func (p planner) readGitRef(gitRefPath string) (ref string, err error) {
 	if err != nil {
 		return
 	}
-	ref = string(bytes)
+	ref = strings.TrimSpace(string(bytes))
 	return
 }
