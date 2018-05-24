@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin/models"
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 type promote struct {
@@ -62,12 +62,12 @@ func (p promote) getDomainsInOrg() (domains []string, err error) {
 
 func addProdRoutes(application manifest.Application, candidateAppName string, domains []string) (commands []plan.Command) {
 	for _, route := range application.Routes {
-		if routeIsDomain(route, domains) {
+		if routeIsDomain(route.Route, domains) {
 			commands = append(commands,
-				plan.NewCfCommand("map-route", candidateAppName, route),
+				plan.NewCfCommand("map-route", candidateAppName, route.Route),
 			)
 		} else {
-			parts := strings.Split(route, ".")
+			parts := strings.Split(route.Route, ".")
 			hostname := parts[0]
 			domain := strings.Join(parts[1:], ".")
 

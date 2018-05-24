@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"code.cloudfoundry.org/cli/cf/errors"
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
 	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 type mockPlanner struct {
@@ -35,41 +35,39 @@ func (m mockPlanner) GetPlan(application manifest.Application, request Request) 
 	return m.plan, m.error
 }
 
-var manifestReader = func(pathToManifest string) ([]manifest.Application, error) {
-	return []manifest.Application{{}}, nil
+type StubManifestReadWrite struct {
+	manifest  manifest.Manifest
+	readError error
+}
+
+var manifestWithOneApp = StubManifestReadWrite{manifest:manifest.Manifest{Applications: []manifest.Application{{}}}}
+
+func (s StubManifestReadWrite) ReadManifest(path string) (manifest.Manifest, error) {
+	return s.manifest, s.readError
+}
+
+func (StubManifestReadWrite) WriteManifest(path string, application manifest.Application) (error) {
+	panic("implement me")
 }
 
 func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 	expectedError := errors.New("blurgh")
-	manifestReaderWithError := func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{{}}, expectedError
-	}
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithError)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{readError: expectedError})
 
 	_, err := controller.GetPlan(Request{Command: config.PUSH})
 	assert.Equal(t, expectedError, err)
 }
 
 func TestControllerReturnsErrorForBadManifest(t *testing.T) {
-	manifestReaderWithEmptyManifest := func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{}, nil
-	}
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithEmptyManifest)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{manifest:manifest.Manifest{}})
 
 	_, err := controller.GetPlan(Request{Command: config.PUSH})
 	assert.Equal(t, ErrBadManifest, err)
 
-	///
 
-	manifestReaderWithManifestWithTwoApps := func(pathToManifest string) ([]manifest.Application, error) {
-		return []manifest.Application{
-			{},
-			{},
-		}, nil
-	}
-	controller = NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReaderWithManifestWithTwoApps)
+	controller = NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{manifest:manifest.Manifest{Applications: []manifest.Application{{}, {}}}})
 	_, err = controller.GetPlan(Request{Command: config.PROMOTE})
 	assert.Equal(t, ErrBadManifest, err)
 }
@@ -77,7 +75,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	expectedErr := errors.New("Meehp")
 
-	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), newMockPlanner(), manifestReader)
+	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
 	_, err := controller.GetPlan(Request{Command: config.PUSH})
 
 	assert.Equal(t, expectedErr, err)
@@ -87,7 +85,7 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 	command := "not-supported"
 	expectedErr := ErrUnknownCommand(command)
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestReader)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
 
 	_, err := controller.GetPlan(Request{Command: command})
 
@@ -99,7 +97,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 		plan.NewCfCommand("blurgh"),
 	}
 
-	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), manifestReader)
+	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
 
 	commands, err := controller.GetPlan(Request{Command: config.PUSH})
 

@@ -5,9 +5,9 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/plugin/models"
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 type mockAppsGetter struct {
@@ -69,9 +69,9 @@ func TestGivesBackErrorIfGetAppsFails(t *testing.T) {
 func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
-		Routes: []string{
-			"my-route1.domain1.com",
-			"my-route2.domain2.com",
+		Routes: []manifest.Route{
+			{"my-route1.domain1.com"},
+			{"my-route2.domain2.com"},
 		},
 	}
 	testDomain := "domain.com"
@@ -120,9 +120,9 @@ func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsNoOldApp(t *testing.T) {
 func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
-		Routes: []string{
-			"my-route1.domain1.com",
-			"my-route2.domain2.com",
+		Routes: []manifest.Route{
+			{"my-route1.domain1.com"},
+			{"my-route2.domain2.com"},
 		},
 	}
 	testDomain := "domain.com"
@@ -154,9 +154,9 @@ func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing
 func TestGivesBackAPromotePlanWhenThereIsAnOldApp(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
-		Routes: []string{
-			"my-route1.domain1.com",
-			"my-route2.domain2.com",
+		Routes: []manifest.Route{
+			{"my-route1.domain1.com"},
+			{"my-route2.domain2.com"},
 		},
 	}
 	testDomain := "domain.com"
@@ -220,8 +220,8 @@ func TestReturnsErrorFromCliCommandWithoutTerminalOutput(t *testing.T) {
 
 	application := manifest.Application{
 		Name: "my-app",
-		Routes: []string{
-			"my-route1.domain1.com",
+		Routes: []manifest.Route{
+			{"my-route1.domain1.com"},
 		},
 	}
 
@@ -232,10 +232,10 @@ func TestReturnsErrorFromCliCommandWithoutTerminalOutput(t *testing.T) {
 func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
-		Routes: []string{
-			"my-route1.domain1.com",
-			"this.should.be.without.hostname.com",
-			"my-route2.domain2.com",
+		Routes: []manifest.Route{
+			{"my-route1.domain1.com"},
+			{"this.should.be.without.hostname.com"},
+			{"my-route2.domain2.com"},
 		},
 	}
 	testDomain := "domain.com"

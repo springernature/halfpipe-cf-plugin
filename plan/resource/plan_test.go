@@ -1,14 +1,14 @@
 package resource
 
 import (
-	"path"
 	"testing"
 
-	"code.cloudfoundry.org/cli/cf/errors"
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/spf13/afero"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"errors"
+	"path"
 )
 
 var validRequest = Request{
@@ -30,17 +30,29 @@ var validRequest = Request{
 		},
 	},
 }
-var manifestReaderWithOneApp = func(pathToManifest string) (apps []manifest.Application, err error) {
-	return []manifest.Application{{}}, nil
+
+type ManifestReadWriteStub struct {
+	manifest      manifest.Manifest
+	readError     error
+	writeError    error
+	savedManifest manifest.Manifest
 }
 
-var manifestWriterWithoutError = func(application manifest.Application, filePath string) error {
-	return nil
+func (m *ManifestReadWriteStub) ReadManifest(path string) (manifest.Manifest, error) {
+	return m.manifest, m.readError
+}
+
+func (m *ManifestReadWriteStub) WriteManifest(path string, application manifest.Application) (error) {
+	m.savedManifest = manifest.Manifest{
+		Applications: []manifest.Application{application},
+	}
+
+	return m.writeError
 }
 
 func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
-	_, err := NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError, fs).Plan(Request{
+	_, err := NewPlanner(&ManifestReadWriteStub{}, fs).Plan(Request{
 		Source: Source{
 			API:      "a",
 			Org:      "b",
@@ -51,7 +63,7 @@ func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
 	}, "")
 	assert.Equal(t, NewErrEmptyParamValue("manifestPath").Error(), err.Error())
 
-	_, err = NewPlanner(manifestReaderWithOneApp, manifestWriterWithoutError, fs).Plan(Request{
+	_, err = NewPlanner(&ManifestReadWriteStub{}, fs).Plan(Request{
 		Params: Params{
 			Command:      config.PUSH,
 			ManifestPath: "f",
@@ -68,16 +80,8 @@ func TestReturnsErrorIfWeFailToReadManifest(t *testing.T) {
 	expectedError := errors.New("Shiied")
 
 	concourseRoot := "/tmp/some/path"
-	fullManifestPath := path.Join(concourseRoot, validRequest.Params.ManifestPath)
 
-	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
-		if pathToManifest == fullManifestPath {
-			err = expectedError
-		}
-		return
-	}
-
-	push := NewPlanner(manifestReader, manifestWriterWithoutError, fs)
+	push := NewPlanner(&ManifestReadWriteStub{readError: expectedError}, fs)
 
 	_, err := push.Plan(validRequest, concourseRoot)
 	assert.Equal(t, expectedError, err)
@@ -89,15 +93,11 @@ func TestReturnsErrorIfWeFailToWriteManifest(t *testing.T) {
 	expectedError := errors.New("Shiied")
 
 	concourseRoot := "/tmp/some/path"
-	fullManifestPath := path.Join(concourseRoot, validRequest.Params.ManifestPath)
 
-	manifestWriter := func(application manifest.Application, filePath string) error {
-		if filePath == fullManifestPath {
-			return expectedError
-		}
-		return nil
+	manifest := manifest.Manifest{
+		Applications: []manifest.Application{{}},
 	}
-	push := NewPlanner(manifestReaderWithOneApp, manifestWriter, fs)
+	push := NewPlanner(&ManifestReadWriteStub{manifest: manifest, writeError: expectedError}, fs)
 
 	_, err := push.Plan(validRequest, concourseRoot)
 
@@ -109,19 +109,11 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 
 	concourseRoot := "/tmp/some/path"
 
-	var manifestReaderCalled = false
-	var manifestWriterCalled = false
-
-	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
-		manifestReaderCalled = true
-		return []manifest.Application{}, nil
-	}
-	manifestWriter := func(application manifest.Application, filePath string) error {
-		manifestWriterCalled = true
-		return nil
-	}
-
-	push := NewPlanner(manifestReader, manifestWriter, fs)
+	push := NewPlanner(
+		&ManifestReadWriteStub{
+			readError:  errors.New("should not happen"),
+			writeError: errors.New("should not happen")},
+		fs)
 
 	validPromoteRequest := Request{
 		Source: Source{
@@ -146,39 +138,33 @@ func TestDoesntWriteManifestIfNotPush(t *testing.T) {
 	_, err := push.Plan(validPromoteRequest, concourseRoot)
 
 	assert.Nil(t, err)
-	assert.False(t, manifestReaderCalled)
-	assert.False(t, manifestWriterCalled)
 }
 
 func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
-	applicationManifest := manifest.Application{
-		Name: "MyApp",
+	applicationManifest := manifest.Manifest{
+		Applications: []manifest.Application{
+			{Name: "MyApp"},
+		},
+	}
+	expectedManifest := manifest.Manifest{
+		Applications: []manifest.Application{
+			{
+				Name:                 "MyApp",
+				EnvironmentVariables: validRequest.Params.Vars,
+			},
+		},
 	}
 
-	expectedManifest := manifest.Application{
-		Name:                 "MyApp",
-		EnvironmentVariables: validRequest.Params.Vars,
-	}
+	manifestReadWrite := &ManifestReadWriteStub{manifest: applicationManifest}
 
-	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
-		return []manifest.Application{applicationManifest}, nil
-	}
-
-	var actualManifest manifest.Application
-	manifestWriter := func(application manifest.Application, filePath string) error {
-		actualManifest = application
-
-		return nil
-	}
-
-	push := NewPlanner(manifestReader, manifestWriter, fs)
+	push := NewPlanner(manifestReadWrite, fs)
 
 	p, err := push.Plan(validRequest, "")
 
 	assert.Nil(t, err)
-	assert.Equal(t, expectedManifest, actualManifest)
+	assert.Equal(t, expectedManifest, manifestReadWrite.savedManifest)
 	assert.Len(t, p, 2)
 	assert.Contains(t, p[0].String(), "cf login")
 	assert.Contains(t, p[1].String(), "cf halfpipe-push")
@@ -187,55 +173,53 @@ func TestGivesACorrectPlanWhenManifestDoesNotHaveAnyEnvironmentVariables(t *test
 func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
-	applicationManifest := manifest.Application{
-		Name: "MyApp",
-		EnvironmentVariables: map[string]string{
-			"VAR1": "a",
-			"VAR2": "b",
-			"VAR3": "c",
+	applicationManifest := manifest.Manifest{
+		Applications: []manifest.Application{
+			{
+				Name: "MyApp",
+				EnvironmentVariables: map[string]string{
+					"VAR1": "a",
+					"VAR2": "b",
+					"VAR3": "c",
+				},
+			},
 		},
 	}
 
-	expectedManifest := manifest.Application{
-		Name: "MyApp",
-		EnvironmentVariables: map[string]string{
-			"VAR1": "a",
-			"VAR2": "bb",
-			"VAR3": "c",
-			"VAR4": "cc",
+	expectedManifest := manifest.Manifest{
+		Applications: []manifest.Application{
+			{
+				Name: "MyApp",
+				EnvironmentVariables: map[string]string{
+					"VAR1": "a",
+					"VAR2": "bb",
+					"VAR3": "c",
+					"VAR4": "cc",
+				},
+			},
 		},
 	}
-	var actualManifest manifest.Application
 
-	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
-		return []manifest.Application{applicationManifest}, nil
-	}
-	manifestWriter := func(application manifest.Application, filePath string) error {
-		actualManifest = application
-		return nil
-	}
-	push := NewPlanner(manifestReader, manifestWriter, fs)
+	manifestReaderWriter := ManifestReadWriteStub{manifest: applicationManifest}
+	push := NewPlanner(&manifestReaderWriter, fs)
 
 	p, err := push.Plan(validRequest, "")
 
 	assert.Nil(t, err)
-	assert.Equal(t, expectedManifest, actualManifest)
+	assert.Equal(t, expectedManifest, manifestReaderWriter.savedManifest)
 	assert.Len(t, p, 2)
 	assert.Contains(t, p[0].String(), "cf login")
 	assert.Contains(t, p[1].String(), "cf halfpipe-push")
 }
 
+
 func TestErrorsIfTheGitRefPathIsSpecifiedButDoesntExist(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
-	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
-		return []manifest.Application{{}}, nil
-	}
-	manifestWriter := func(application manifest.Application, filePath string) error {
-		return nil
-	}
 
-	push := NewPlanner(manifestReader, manifestWriter, fs)
+	push := NewPlanner(&ManifestReadWriteStub{
+		manifest: manifest.Manifest{[]manifest.Application{{}}},
+	}, fs)
 	request := Request{
 		Source: Source{
 			API:      "a",
@@ -264,17 +248,21 @@ func TestPutsGitRefInTheManifest(t *testing.T) {
 	gitRef := "wiiiie\n"
 	fs.WriteFile(path.Join(concourseRoot, gitRefPath), []byte(gitRef), 0700)
 
-	manifestReader := func(pathToManifest string) (apps []manifest.Application, err error) {
-		return []manifest.Application{{}}, nil
+	applicationManifest := manifest.Manifest{
+		Applications: []manifest.Application{
+			{
+				Name: "MyApp",
+				EnvironmentVariables: map[string]string{
+					"VAR1": "a",
+					"VAR2": "b",
+					"VAR3": "c",
+				},
+			},
+		},
 	}
 
-	var writtenManifest manifest.Application
-	manifestWriter := func(application manifest.Application, filePath string) error {
-		writtenManifest = application
-		return nil
-	}
-
-	push := NewPlanner(manifestReader, manifestWriter, fs)
+	stub := ManifestReadWriteStub{manifest:applicationManifest}
+	push := NewPlanner(&stub, fs)
 
 	request := Request{
 		Source: Source{
@@ -296,6 +284,6 @@ func TestPutsGitRefInTheManifest(t *testing.T) {
 	_, err := push.Plan(request, concourseRoot)
 
 	assert.Nil(t, err)
-	assert.Equal(t, writtenManifest.EnvironmentVariables["GIT_REVISION"], "wiiiie")
+	assert.Equal(t, stub.savedManifest.Applications[0].EnvironmentVariables["GIT_REVISION"], "wiiiie")
 }
 

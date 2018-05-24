@@ -1,15 +1,15 @@
 package plugin
 
 import (
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 type push struct {
 	appsGetter AppsGetter
 }
 
-func NewPushPlanner(appsGetter AppsGetter) push {
+func NewPushPlanner(appsGetter AppsGetter) Planner {
 	return push{
 		appsGetter: appsGetter,
 	}

@@ -3,9 +3,9 @@ package plugin
 import (
 	"testing"
 
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 func TestGivesBackAPushPlan(t *testing.T) {

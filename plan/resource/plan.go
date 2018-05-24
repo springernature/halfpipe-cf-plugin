@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"path"
 
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/spf13/afero"
 	"strings"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 var NewErrEmptyParamValue = func(fieldName string) error {
@@ -29,15 +29,13 @@ type Plan interface {
 }
 
 type planner struct {
-	manifestReader func(pathToManifest string) ([]manifest.Application, error)
-	manifestWriter func(application manifest.Application, filePath string) error
+	manifestReaderWrite manifest.ManifestReaderWriter
 	fs             afero.Afero
 }
 
-func NewPlanner(manifestReader func(pathToManifest string) ([]manifest.Application, error), manifestWriter func(application manifest.Application, filePath string) error, fs afero.Afero) Plan {
+func NewPlanner(manifestReaderWrite manifest.ManifestReaderWriter, fs afero.Afero) Plan {
 	return planner{
-		manifestReader: manifestReader,
-		manifestWriter: manifestWriter,
+		manifestReaderWrite: manifestReaderWrite,
 		fs:             fs,
 	}
 }
@@ -129,7 +127,7 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 
 func (p planner) updateManifestWithVars(manifestPath string, gitRefPath string, vars map[string]string) (err error) {
 	if len(vars) > 0 || gitRefPath != "" {
-		apps, e := p.manifestReader(manifestPath)
+		apps, e := p.manifestReaderWrite.ReadManifest(manifestPath)
 		if e != nil {
 			err = e
 			return
@@ -137,7 +135,7 @@ func (p planner) updateManifestWithVars(manifestPath string, gitRefPath string, 
 
 		// We just assume the first app in the manifest is the app under deployment.
 		// We lint that this is the case in the halfpipe linter.
-		app := apps[0]
+		app := apps.Applications[0]
 		if len(app.EnvironmentVariables) == 0 {
 			app.EnvironmentVariables = map[string]string{}
 		}
@@ -155,7 +153,7 @@ func (p planner) updateManifestWithVars(manifestPath string, gitRefPath string, 
 			app.EnvironmentVariables["GIT_REVISION"] = ref
 		}
 
-		if err = p.manifestWriter(app, manifestPath); err != nil {
+		if err = p.manifestReaderWrite.WriteManifest(manifestPath, app); err != nil {
 			return
 		}
 	}

@@ -1,9 +1,9 @@
 package plugin
 
 import (
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"fmt"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 type cleanup struct {

@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"code.cloudfoundry.org/cli/util/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/spf13/afero"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 func main() {
@@ -41,10 +41,10 @@ func main() {
 	case "":
 		panic("params.command must not be empty")
 	case config.PUSH, config.PROMOTE, config.DELETE, config.CLEANUP:
+		fs := afero.Afero{Fs: afero.NewOsFs()}
 		p, err = resource.NewPlanner(
-			manifest.ReadAndMergeManifests,
-			manifest.WriteApplicationManifest,
-			afero.Afero{Fs: afero.NewOsFs()},
+			manifest.NewManifestReadWrite(fs),
+			fs,
 		).Plan(request, concourseRoot)
 	default:
 		panic(fmt.Sprintf("Command '%s' not supported", request.Params.Command))
