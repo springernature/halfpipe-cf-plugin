@@ -62,19 +62,30 @@ func (p promote) getDomainsInOrg() (domains []string, err error) {
 
 func addProdRoutes(application manifest.Application, candidateAppName string, domains []string) (commands []plan.Command) {
 	for _, route := range application.Routes {
-		if routeIsDomain(route.Route, domains) {
-			commands = append(commands,
-				plan.NewCfCommand("map-route", candidateAppName, route.Route),
-			)
+
+		routeSplitByPath := strings.Split(strings.TrimSpace(route.Route), "/")
+		hostnameAndDomain := routeSplitByPath[0]
+		var path string
+		if len(routeSplitByPath) > 1 {
+			path = strings.Join(routeSplitByPath[1:], "/")
+		}
+
+		args := []string{"map-route", candidateAppName}
+
+		if routeIsDomain(hostnameAndDomain, domains) {
+			args = append(args, hostnameAndDomain)
 		} else {
-			parts := strings.Split(route.Route, ".")
+			parts := strings.Split(hostnameAndDomain, ".")
 			hostname := parts[0]
 			domain := strings.Join(parts[1:], ".")
-
-			commands = append(commands,
-				plan.NewCfCommand("map-route", candidateAppName, domain, "-n", hostname),
-			)
+			args = append(args, domain, "-n", hostname)
 		}
+
+		if path != "" {
+			args = append(args, "--path", path)
+		}
+
+		commands = append(commands, plan.NewCfCommand(args...))
 	}
 	return
 }

@@ -31,8 +31,8 @@
     "util/ui",
     "version"
   ]
-  revision = "2af0851c1f20323abc6da2f2d5ece0dec80ccce5"
-  version = "v6.35.0"
+  revision = "a400097531d46b877badee63790d847655cdf595"
+  version = "v6.37.0"
 
 [[projects]]
   name = "github.com/SermoDigital/jose"
@@ -52,16 +52,50 @@
   version = "v3.5.1"
 
 [[projects]]
+  name = "github.com/bmatcuk/doublestar"
+  packages = ["."]
+  revision = "b3608229437ba4dc33dae64d56a79a2a73f1f6b2"
+  version = "v1.0.9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/charlievieth/fs"
+  packages = ["."]
+  revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
+
+[[projects]]
+  name = "github.com/cloudfoundry/bosh-cli"
+  packages = ["director/template"]
+  revision = "712bfd7271b478ba03c3f604339e2eefbec4647c"
+  version = "v3.0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/bosh-utils"
+  packages = [
+    "errors",
+    "logger",
+    "system"
+  ]
+  revision = "b082aa9a81950fa8df1a969575319417b1e073f4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cppforlife/go-patch"
+  packages = ["patch"]
+  revision = "250da0e0e68ce3367b4302f34218f6c064eb9559"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/fatih/color"
   packages = ["."]
-  revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
-  version = "v1.6.0"
+  revision = "2d684516a8861da43017284349b7e303e809ac21"
 
 [[projects]]
   branch = "master"
@@ -155,15 +189,14 @@
   revision = "b7ef84aaf62aa3e70962625c80a571ae7c17cb40"
 
 [[projects]]
-  branch = "off_by_one_scanner_error_line"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "fd70c8694ac38cc10ed519e30c6309aa9cb7bbd9"
-  source = "github.com/vitreuz/yaml"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b1a71e8d3188e6d5f696dfc50a7c441f4c7f0a0027fd6145b4b9eba8b111e44e"
+  inputs-digest = "f9c244e5da153c0c8f3c3a8c34bb95b7d1a72c3763f2cbe2ab864fcf4b008199"
   solver-name = "gps-cdcl"
   solver-version = 1

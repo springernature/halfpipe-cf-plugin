@@ -72,6 +72,9 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 		Routes: []manifest.Route{
 			{"my-route1.domain1.com"},
 			{"my-route2.domain2.com"},
+			{"my-route3.domain3.com/path"},
+			{"this.should.be.without.hostname.com"},
+			{"this.should.be.without.hostname.com/some/other/path"},
 		},
 	}
 	testDomain := "domain.com"
@@ -80,6 +83,9 @@ func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
 		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
+		plan.NewCfCommand("map-route", candidateAppName, "domain3.com", "-n", "my-route3", "--path", "path"),
+		plan.NewCfCommand("map-route", candidateAppName, "this.should.be.without.hostname.com"),
+		plan.NewCfCommand("map-route", candidateAppName, "this.should.be.without.hostname.com", "--path", "some/other/path"),
 		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-dev-CANDIDATE"),
 		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
 	}
