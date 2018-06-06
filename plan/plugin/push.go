@@ -1,8 +1,8 @@
 package plugin
 
 import (
-	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 type push struct {
@@ -25,32 +25,41 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 		return
 	}
 
-	pl = append(pl, plan.NewCfCommand(
-		"push",
-		candidateName,
-		"-f", request.ManifestPath,
-		"-p", request.AppPath,
-		"--no-route",
-	))
-
-	if !application.NoRoute {
-		pl = append(pl, plan.NewCfCommand(
-			"map-route",
-			candidateName,
-			request.TestDomain,
-			"-n", candidateHost,
-		))
-
-		pl = append(pl, plan.NewCfCommand(
-			"set-health-check",
-			candidateName,
-			"http",
-		))
-
-		pl = append(pl, plan.NewCfCommand(
-			"restart",
-			candidateName,
-		))
+	if application.NoRoute {
+		pl = plan.Plan{
+			plan.NewCfCommand(
+				"push",
+				candidateName,
+				"-f", request.ManifestPath,
+				"-p", request.AppPath,
+			),
+		}
+	} else {
+		pl = plan.Plan{
+			plan.NewCfCommand(
+				"push",
+				candidateName,
+				"-f", request.ManifestPath,
+				"-p", request.AppPath,
+				"--no-route",
+				"--no-start",
+			),
+			plan.NewCfCommand(
+				"map-route",
+				candidateName,
+				request.TestDomain,
+				"-n", candidateHost,
+			),
+			plan.NewCfCommand(
+				"set-health-check",
+				candidateName,
+				"http",
+			),
+			plan.NewCfCommand(
+				"start",
+				candidateName,
+			),
+		}
 	}
 	return
 }

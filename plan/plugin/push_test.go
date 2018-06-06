@@ -3,9 +3,9 @@ package plugin
 import (
 	"testing"
 
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
-	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 func TestGivesBackAPushPlan(t *testing.T) {
@@ -22,10 +22,10 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	expectedApplicationHostname := createCandidateHostname(application.Name, space)
 
 	expectedPlan := plan.Plan{
-		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "--no-route"),
+		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "--no-route", "--no-start"),
 		plan.NewCfCommand("map-route", expectedApplicationName, testDomain, "-n", expectedApplicationHostname),
 		plan.NewCfCommand("set-health-check", expectedApplicationName, "http"),
-		plan.NewCfCommand("restart", expectedApplicationName),
+		plan.NewCfCommand("start", expectedApplicationName),
 	}
 
 	push := NewPushPlanner(newMockAppsGetter())
@@ -54,7 +54,7 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 	testDomain := "domain.com"
 
 	expectedPlan := plan.Plan{
-		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "--no-route"),
+		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath),
 	}
 
 	push := NewPushPlanner(newMockAppsGetter())
