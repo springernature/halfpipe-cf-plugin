@@ -24,6 +24,8 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	expectedPlan := plan.Plan{
 		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "--no-route"),
 		plan.NewCfCommand("map-route", expectedApplicationName, testDomain, "-n", expectedApplicationHostname),
+		plan.NewCfCommand("set-health-check", expectedApplicationName, "http"),
+		plan.NewCfCommand("restart", expectedApplicationName),
 	}
 
 	push := NewPushPlanner(newMockAppsGetter())
@@ -36,7 +38,7 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	})
 
 	assert.Nil(t, err)
-	assert.Len(t, commands, 2)
+	assert.Len(t, commands, 4)
 	assert.Equal(t, expectedPlan, commands)
 }
 

@@ -40,6 +40,17 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 			request.TestDomain,
 			"-n", candidateHost,
 		))
+
+		pl = append(pl, plan.NewCfCommand(
+			"set-health-check",
+			candidateName,
+			"http",
+		))
+
+		pl = append(pl, plan.NewCfCommand(
+			"restart",
+			candidateName,
+		))
 	}
 	return
 }
