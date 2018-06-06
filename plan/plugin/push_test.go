@@ -22,7 +22,8 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	expectedApplicationHostname := createCandidateHostname(application.Name, space)
 
 	expectedPlan := plan.Plan{
-		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-n", expectedApplicationHostname, "-d", testDomain),
+		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "--no-route"),
+		plan.NewCfCommand("map-route", expectedApplicationName, testDomain, "-n", expectedApplicationHostname),
 	}
 
 	push := NewPushPlanner(newMockAppsGetter())
@@ -35,7 +36,7 @@ func TestGivesBackAPushPlan(t *testing.T) {
 	})
 
 	assert.Nil(t, err)
-	assert.Len(t, commands, 1)
+	assert.Len(t, commands, 2)
 	assert.Equal(t, expectedPlan, commands)
 }
 
@@ -51,7 +52,7 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 	testDomain := "domain.com"
 
 	expectedPlan := plan.Plan{
-		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath),
+		plan.NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "--no-route"),
 	}
 
 	push := NewPushPlanner(newMockAppsGetter())

@@ -25,21 +25,20 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl pla
 		return
 	}
 
-	if application.NoRoute {
+	pl = append(pl, plan.NewCfCommand(
+		"push",
+		candidateName,
+		"-f", request.ManifestPath,
+		"-p", request.AppPath,
+		"--no-route",
+	))
+
+	if !application.NoRoute {
 		pl = append(pl, plan.NewCfCommand(
-			"push",
+			"map-route",
 			candidateName,
-			"-f", request.ManifestPath,
-			"-p", request.AppPath,
-		))
-	} else {
-		pl = append(pl, plan.NewCfCommand(
-			"push",
-			candidateName,
-			"-f", request.ManifestPath,
-			"-p", request.AppPath,
+			request.TestDomain,
 			"-n", candidateHost,
-			"-d", request.TestDomain,
 		))
 	}
 	return
