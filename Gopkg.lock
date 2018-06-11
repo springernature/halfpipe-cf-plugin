@@ -119,7 +119,7 @@
   branch = "master"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
-  revision = "a9d6d1e4dc51df2130326793d49971f238839169"
+  revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -139,14 +139,14 @@
     ".",
     "mem"
   ]
-  revision = "63644898a8da0bc22138abf860edaf5277b6102e"
-  version = "v1.1.0"
+  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
-  version = "v1.2.1"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
 
 [[projects]]
   branch = "master"
@@ -161,7 +161,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "c7dcf104e3a7a1417abc0230cb0d5240d764159d"
+  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
 
 [[projects]]
   branch = "master"
@@ -170,7 +170,7 @@
     "unix",
     "windows"
   ]
-  revision = "c28acc882ebcbfbe8ce9f0f14b9ac26ee138dd51"
+  revision = "bff228c7b664c5fce602223a05fb708fd8654986"
 
 [[projects]]
   branch = "master"
@@ -178,6 +178,7 @@
   packages = [
     "internal/gen",
     "internal/language",
+    "internal/language/compact",
     "internal/tag",
     "internal/triegen",
     "internal/ucd",
@@ -186,7 +187,7 @@
     "unicode/cldr",
     "unicode/norm"
   ]
-  revision = "b7ef84aaf62aa3e70962625c80a571ae7c17cb40"
+  revision = "5c1cf69b5978e5a34c5f9ba09a83e56acc4b7877"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -197,6 +198,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f9c244e5da153c0c8f3c3a8c34bb95b7d1a72c3763f2cbe2ab864fcf4b008199"
+  inputs-digest = "fca2f6d33128eb4a10cdc06878b8f74db6ec3fc10d83c62ce573dcbff785090f"
   solver-name = "gps-cdcl"
   solver-version = 1

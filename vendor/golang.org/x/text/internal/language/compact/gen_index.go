@@ -52,6 +52,11 @@ func (b *builder) writeCompactIndex() {
 		m[tag] = true
 		// }
 	}
+
+	// TODO: plural rules are also defined for the deprecated tags:
+	//    iw mo sh tl
+	// Consider removing these as compact tags.
+
 	// Include locales for plural rules, which uses a different structure.
 	for _, plurals := range b.supp.Plurals {
 		for _, rules := range plurals.PluralRules {
@@ -91,10 +96,10 @@ func (b *builder) writeCompactIndex() {
 
 	fmt.Fprintln(w, "const (")
 	for i, t := range coreTags {
-		fmt.Fprintf(w, "%s compactID = %d\n", ident(t.Tag().String()), i)
+		fmt.Fprintf(w, "%s ID = %d\n", ident(t.Tag().String()), i)
 	}
 	for i, t := range special {
-		fmt.Fprintf(w, "%s compactID = %d\n", ident(t), i+len(coreTags))
+		fmt.Fprintf(w, "%s ID = %d\n", ident(t), i+len(coreTags))
 	}
 	fmt.Fprintln(w, ")")
 
