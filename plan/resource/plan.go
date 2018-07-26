@@ -114,12 +114,27 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 			"-p", request.Source.Password,
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
-		plan.NewCfCommand(request.Params.Command,
+
+	}
+
+	switch request.Params.Command {
+	case config.PUSH:
+		pl = append(pl, plan.NewCfCommand(request.Params.Command,
 			"-manifestPath", fullManifestPath,
 			"-appPath", path.Join(concourseRoot, request.Params.AppPath),
 			"-testDomain", request.Params.TestDomain,
 			"-space", request.Source.Space,
-		),
+		))
+	case config.PROMOTE:
+		pl = append(pl, plan.NewCfCommand(request.Params.Command,
+			"-manifestPath", fullManifestPath,
+			"-testDomain", request.Params.TestDomain,
+			"-space", request.Source.Space,
+		))
+	case config.CLEANUP, config.DELETE:
+		pl = append(pl, plan.NewCfCommand(request.Params.Command,
+			"-manifestPath", fullManifestPath,
+		))
 	}
 
 	return
