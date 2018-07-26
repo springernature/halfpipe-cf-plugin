@@ -42,6 +42,10 @@ func main() {
 		panic("params.command must not be empty")
 	case config.PUSH, config.PROMOTE, config.DELETE, config.CLEANUP:
 		fs := afero.Afero{Fs: afero.NewOsFs()}
+		if err = resource.VerifyRequest(request); err != nil {
+			break
+		}
+
 		p, err = resource.NewPlanner(
 			manifest.NewManifestReadWrite(fs),
 			fs,

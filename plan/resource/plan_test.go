@@ -50,30 +50,6 @@ func (m *ManifestReadWriteStub) WriteManifest(path string, application manifest.
 	return m.writeError
 }
 
-func TestNewPushReturnsErrorForEmptyValue(t *testing.T) {
-	fs := afero.Afero{Fs: afero.NewMemMapFs()}
-	_, err := NewPlanner(&ManifestReadWriteStub{}, fs).Plan(Request{
-		Source: Source{
-			API:      "a",
-			Org:      "b",
-			Space:    "c",
-			Username: "d",
-			Password: "e",
-		},
-	}, "")
-	assert.Equal(t, NewErrEmptyParamValue("manifestPath").Error(), err.Error())
-
-	_, err = NewPlanner(&ManifestReadWriteStub{}, fs).Plan(Request{
-		Params: Params{
-			Command:      config.PUSH,
-			ManifestPath: "f",
-			AppPath:      "",
-			TestDomain:   "a",
-		},
-	}, "")
-	assert.Equal(t, NewErrEmptySourceValue("space").Error(), err.Error())
-}
-
 func TestReturnsErrorIfWeFailToReadManifest(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
@@ -212,10 +188,8 @@ func TestGivesACorrectPlanThatAlsoOverridesVariablesInManifest(t *testing.T) {
 	assert.Contains(t, p[1].String(), "cf halfpipe-push")
 }
 
-
 func TestErrorsIfTheGitRefPathIsSpecifiedButDoesntExist(t *testing.T) {
 	fs := afero.Afero{Fs: afero.NewMemMapFs()}
-
 
 	push := NewPlanner(&ManifestReadWriteStub{
 		manifest: manifest.Manifest{[]manifest.Application{{}}},
@@ -261,7 +235,7 @@ func TestPutsGitRefInTheManifest(t *testing.T) {
 		},
 	}
 
-	stub := ManifestReadWriteStub{manifest:applicationManifest}
+	stub := ManifestReadWriteStub{manifest: applicationManifest}
 	push := NewPlanner(&stub, fs)
 
 	request := Request{
@@ -286,4 +260,3 @@ func TestPutsGitRefInTheManifest(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, stub.savedManifest.Applications[0].EnvironmentVariables["GIT_REVISION"], "wiiiie")
 }
-

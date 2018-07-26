@@ -1,8 +1,6 @@
 package resource
 
 import (
-	"errors"
-	"fmt"
 	"path"
 
 	"github.com/springernature/halfpipe-cf-plugin/plan"
@@ -12,96 +10,34 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
-var NewErrEmptyParamValue = func(fieldName string) error {
-	errorMsg := fmt.Sprintf("Field params.%s must not be empty!", fieldName)
-	return errors.New(errorMsg)
-}
-
-type ErrEmptySourceValue error
-
-var NewErrEmptySourceValue = func(fieldName string) error {
-	errorMsg := fmt.Sprintf("Field source.%s must not be empty!", fieldName)
-	return errors.New(errorMsg)
-}
-
 type Plan interface {
 	Plan(request Request, concourseRoot string) (plan plan.Plan, err error)
 }
 
 type planner struct {
 	manifestReaderWrite manifest.ManifestReaderWriter
-	fs             afero.Afero
+	fs                  afero.Afero
 }
 
 func NewPlanner(manifestReaderWrite manifest.ManifestReaderWriter, fs afero.Afero) Plan {
 	return planner{
 		manifestReaderWrite: manifestReaderWrite,
-		fs:             fs,
+		fs:                  fs,
 	}
-}
-
-func checkParamField(field string, value string) (err error) {
-	if value == "" {
-		err = NewErrEmptyParamValue(field)
-	}
-	return
-}
-
-func checkSourceField(field string, value string) (err error) {
-	if value == "" {
-		err = NewErrEmptySourceValue(field)
-	}
-	return
-}
-
-func check(request Request) (err error) {
-	if err = checkParamField("manifestPath", request.Params.ManifestPath); err != nil {
-		return
-	}
-
-	if err = checkParamField("testDomain", request.Params.TestDomain); err != nil {
-		return
-	}
-
-	if err = checkParamField("command", request.Params.Command); err != nil {
-		return
-	}
-
-	if err = checkSourceField("space", request.Source.Space); err != nil {
-		return
-	}
-
-	if err = checkSourceField("org", request.Source.Org); err != nil {
-		return
-	}
-
-	if err = checkSourceField("password", request.Source.Password); err != nil {
-		return
-	}
-
-	if err = checkSourceField("username", request.Source.Username); err != nil {
-		return
-	}
-
-	if err = checkSourceField("api", request.Source.API); err != nil {
-		return
-	}
-
-	return
 }
 
 func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err error) {
-	if err = check(request); err != nil {
-		return
-	}
+	// Here we assume that the request is complete.
+	// It has already been verified in out.go with the help of requests.VerifyRequest.
 
 	fullManifestPath := path.Join(concourseRoot, request.Params.ManifestPath)
-	var fullGitRefPath string
-	if request.Params.GitRefPath != "" {
-		fullGitRefPath = path.Join(concourseRoot, request.Params.GitRefPath)
-	}
 
 	if request.Params.Command == config.PUSH {
+		fullGitRefPath := ""
+		if request.Params.GitRefPath != "" {
+			fullGitRefPath = path.Join(concourseRoot, request.Params.GitRefPath)
+		}
+
 		if err = p.updateManifestWithVars(fullManifestPath, fullGitRefPath, request.Params.Vars); err != nil {
 			return
 		}
@@ -114,7 +50,6 @@ func (p planner) Plan(request Request, concourseRoot string) (pl plan.Plan, err 
 			"-p", request.Source.Password,
 			"-o", request.Source.Org,
 			"-s", request.Source.Space),
-
 	}
 
 	switch request.Params.Command {

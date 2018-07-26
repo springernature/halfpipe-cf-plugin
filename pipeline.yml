@@ -94,19 +94,14 @@ jobs:
       testDomain: apps.public.gcp.springernature.io
   - put: cf
     params:
-      appPath: git/.integration_test
       command: halfpipe-promote
-      gitRefPath: git/.git/ref
       manifestPath: git/.integration_test/manifest.yml
       testDomain: apps.public.gcp.springernature.io
   ensure:
     put: cf
     params:
-      appPath: git/.integration_test
       command: halfpipe-cleanup
-      gitRefPath: git/.git/ref
       manifestPath: git/.integration_test/manifest.yml
-      testDomain: apps.public.gcp.springernature.io
 
 - name: Tag docker image as stable
   serial: true
