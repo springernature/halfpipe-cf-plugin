@@ -19,13 +19,17 @@ func NewPromotePlanner(appsGetter AppsGetter) Planner {
 }
 
 func (p promote) GetPlan(application manifest.Application, request Request) (plan plan.Plan, err error) {
-	apps, err := p.appsGetter.GetApps()
+	candidateAppName := createCandidateAppName(application.Name)
 
+	currentCandidateAppState, err := p.appsGetter.GetApp(candidateAppName)
 	if err != nil {
 		return
 	}
 
-	candidateAppName := createCandidateAppName(application.Name)
+	apps, err := p.appsGetter.GetApps()
+	if err != nil {
+		return
+	}
 
 	if !application.NoRoute {
 		domains, domainsErr := p.getDomainsInOrg()
@@ -34,8 +38,11 @@ func (p promote) GetPlan(application manifest.Application, request Request) (pla
 			return
 		}
 
-		plan = append(plan, addProdRoutes(application, candidateAppName, domains)...)
-		plan = append(plan, removeTestRoute(application.Name, request.Space, request.TestDomain))
+		plan = append(plan, addProdRoutes(application, currentCandidateAppState.Routes, candidateAppName, domains)...)
+
+		if routeAlreadyMapped(createCandidateHostname(application.Name, request.Space), request.TestDomain, "", currentCandidateAppState.Routes) {
+			plan = append(plan, removeTestRoute(application.Name, request.Space, request.TestDomain))
+		}
 	}
 
 	plan = append(plan, renameOldAppToDelete(apps, createOldAppName(application.Name), application.Name)...)
@@ -60,9 +67,9 @@ func (p promote) getDomainsInOrg() (domains []string, err error) {
 	return
 }
 
-func addProdRoutes(application manifest.Application, candidateAppName string, domains []string) (commands []plan.Command) {
+func addProdRoutes(application manifest.Application, currentCandidateAppRoutes []plugin_models.GetApp_RouteSummary, candidateAppName string, domains []string) (commands []plan.Command) {
 	for _, route := range application.Routes {
-
+		alreadyMapped := false
 		routeSplitByPath := strings.Split(strings.TrimSpace(route.Route), "/")
 		hostnameAndDomain := routeSplitByPath[0]
 		var path string
@@ -73,11 +80,13 @@ func addProdRoutes(application manifest.Application, candidateAppName string, do
 		args := []string{"map-route", candidateAppName}
 
 		if routeIsDomain(hostnameAndDomain, domains) {
+			alreadyMapped = routeAlreadyMapped("", hostnameAndDomain, path, currentCandidateAppRoutes)
 			args = append(args, hostnameAndDomain)
 		} else {
 			parts := strings.Split(hostnameAndDomain, ".")
 			hostname := parts[0]
 			domain := strings.Join(parts[1:], ".")
+			alreadyMapped = routeAlreadyMapped(hostname, domain, path, currentCandidateAppRoutes)
 			args = append(args, domain, "-n", hostname)
 		}
 
@@ -85,7 +94,9 @@ func addProdRoutes(application manifest.Application, candidateAppName string, do
 			args = append(args, "--path", path)
 		}
 
-		commands = append(commands, plan.NewCfCommand(args...))
+		if !alreadyMapped {
+			commands = append(commands, plan.NewCfCommand(args...))
+		}
 	}
 	return
 }
@@ -137,4 +148,13 @@ func renameOldAppToDelete(apps []plugin_models.GetAppsModel, oldAppName string, 
 	}
 
 	return
+}
+
+func routeAlreadyMapped(hostname string, domain string, path string, routes []plugin_models.GetApp_RouteSummary) bool {
+	for _, route := range routes {
+		if route.Host == hostname && route.Domain.Name == domain && route.Path == path {
+			return true
+		}
+	}
+	return false
 }
