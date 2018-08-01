@@ -31,7 +31,7 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan p
 		return
 	}
 
-	currentLiveApp, currentOldApp, err := p.GetPreviousAppState(manifest.Name)
+	currentLiveApp, currentOldApp, currentDeleteApp, err := p.GetPreviousAppState(manifest.Name)
 	if err != nil {
 		return
 	}
@@ -43,8 +43,8 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan p
 
 	plan = append(plan, addManifestRoutes(candidateAppState, manifest.Routes, domainsInOrg)...)
 	plan = append(plan, removeTestRoute(candidateAppState, manifest.Name, request.TestDomain, request.Space)...)
-	plan = append(plan, renameOldAppToDelete(currentOldApp, manifest.Name)...)
-	plan = append(plan, renameAndStopCurrentLiveApp(currentLiveApp)...)
+	plan = append(plan, renameOldAppToDelete(currentLiveApp, currentOldApp, currentDeleteApp, manifest.Name)...)
+	plan = append(plan, renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp)...)
 	plan = append(plan, renameCandidateAppToExpectedName(candidateAppState.Name, manifest.Name))
 
 	return
@@ -63,7 +63,7 @@ func (p promote) getAndVerifyCandidateAppState(manifestAppName string) (app plug
 	return
 }
 
-func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, currentOld plugin_models.GetAppsModel, err error) {
+func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, currentOld, currentDelete plugin_models.GetAppsModel, err error) {
 	appFinder := func(name string, apps []plugin_models.GetAppsModel) (app plugin_models.GetAppsModel) {
 		for _, app := range apps {
 			if app.Name == name {
@@ -80,6 +80,7 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 
 	currentLive = appFinder(manifestAppName, apps)
 	currentOld = appFinder(createOldAppName(manifestAppName), apps)
+	currentDelete = appFinder(createDeleteName(manifestAppName, 0), apps)
 	return
 }
 
@@ -112,7 +113,37 @@ func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []man
 		return false
 	}
 
+	alreadyBoundToApp := func(route string, routes []plugin_models.GetApp_RouteSummary) bool {
+		parts := strings.Split(route, "/")
+		routeWithoutPath := parts[0]
+		var path string
+		if len(parts) > 1 {
+			path = strings.Join(parts[1:], "/")
+		}
+
+		var hostname string
+		var domain string
+		if bindingToADomain(routeWithoutPath, domainsInOrg) {
+			domain = routeWithoutPath
+		} else {
+			bits := strings.Split(routeWithoutPath, ".")
+			hostname = bits[0]
+			domain = strings.Join(bits[1:], ".")
+		}
+
+		for _, r := range routes {
+			if r.Host == hostname && r.Path == path && r.Domain.Name == domain {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	for _, route := range routes {
+		if alreadyBoundToApp(route.Route, candidateAppState.Routes) {
+			continue
+		}
 		parts := strings.Split(route.Route, "/")
 		routeWithoutPath := parts[0]
 		var path string
@@ -157,18 +188,44 @@ func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppNam
 	return
 }
 
-func renameOldAppToDelete(oldApp plugin_models.GetAppsModel, manifestAppName string) (pl []plan.Command) {
-	if oldApp.Name == "" {
-		// Empty name means the app didn't exist
+func renameOldAppToDelete(currentLiveApp, oldApp, deleteApp plugin_models.GetAppsModel, manifestAppName string) (pl []plan.Command) {
+	/*
+	Empty name means the app did not exist
+	I.e for the app with name xyz there is no xyz-OLD and xyz-DELETE
+	This function is confusing and complex, have a look at the tests cases
+	* TestAppWithRouteWhenPreviousPromoteFailure
+	* TestWorkerAppWithPreviousPromoteFailure
+	 */
+	if currentLiveApp.Name == "" && oldApp.Name != "" {
+		// 		$ cf rename appName appName-OLD <- Succeeded in a previous run
+		//		$ cf stop appName-OLD <- Failed in a previous run
 		return
 	}
+
+	if deleteApp.Name == "" && oldApp.Name == "" {
+		// If there is no old apps with the -DELETE and -OLD postfix.
+		// We rust return
+		return
+	}
+
+	if currentLiveApp.Name != "" && deleteApp.Name != "" && oldApp.Name == "" {
+		// $ cf rename appName-OLD appName-DELETE <- Succeeded in a previous run
+		// $ cf rename appName appName-OLD <- Failed in a previous run
+		return
+	}
+
 	pl = append(pl, plan.NewCfCommand("rename", oldApp.Name, createDeleteName(manifestAppName, 0)))
 	return
 }
 
-func renameAndStopCurrentLiveApp(currentLiveApp plugin_models.GetAppsModel) (pl []plan.Command) {
+func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.GetAppsModel) (pl []plan.Command) {
+	if currentLiveApp.Name == "" && currentOldApp.State == "started" {
+		// See TestWorkerAppWithPreviousPromoteFailure.One previously running deployed version.previous promote failed at step [2]
+		pl = append(pl, plan.NewCfCommand("stop", currentOldApp.Name))
+		return
+	}
+
 	if currentLiveApp.Name == "" {
-		// Empty name means the app didn't exist
 		return
 	}
 
