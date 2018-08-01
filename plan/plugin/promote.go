@@ -104,62 +104,66 @@ func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []strin
 }
 
 func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []manifest.Route, domainsInOrg []string) (pl []plan.Command) {
-	bindingToADomain := func(route string, domains []string) bool {
-		for _, domain := range domains {
-			if route == domain {
-				return true
-			}
-		}
-		return false
-	}
-
-	parseRoute := func(route string) (hostname, domain, path string) {
-		parts := strings.Split(route, "/")
-		routeWithoutPath := parts[0]
-		if len(parts) > 1 {
-			path = strings.Join(parts[1:], "/")
-		}
-
-		if bindingToADomain(routeWithoutPath, domainsInOrg) {
-			domain = routeWithoutPath
-		} else {
-			bits := strings.Split(routeWithoutPath, ".")
-			hostname = bits[0]
-			domain = strings.Join(bits[1:], ".")
-		}
-		return
-	}
-
-	alreadyBoundToApp := func(hostname, domain, path string, routes []plugin_models.GetApp_RouteSummary) bool {
-		for _, r := range routes {
-			if r.Host == hostname && r.Path == path && r.Domain.Name == domain {
-				return true
-			}
-		}
-
-		return false
-	}
-
 	for _, route := range routes {
-		hostname, domain, path := parseRoute(route.Route)
+		hostname, domain, path := parseRoute(route.Route, domainsInOrg)
 
-		if alreadyBoundToApp(hostname, domain, path, candidateAppState.Routes) {
+		if routeIsBoundToApp(hostname, domain, path, candidateAppState.Routes) {
 			continue
 		}
 
-		args := []string{"map-route"}
-		if hostname == "" {
-			args = append(args, []string{candidateAppState.Name, domain}...)
-		} else {
-			args = append(args, []string{candidateAppState.Name, domain, "-n", hostname}...)
+		args := []string{
+			"map-route",
+			candidateAppState.Name,
+			domain,
+		}
+
+		if hostname != "" {
+			args = append(args, []string{"-n", hostname}...)
 		}
 
 		if path != "" {
 			args = append(args, []string{"--path", path}...)
 		}
+
 		pl = append(pl, plan.NewCfCommand(args...))
 	}
 	return
+}
+
+func parseRoute(route string, domainsInOrg []string) (hostname, domain, path string) {
+	parts := strings.Split(route, "/")
+	routeWithoutPath := parts[0]
+	if len(parts) > 1 {
+		path = strings.Join(parts[1:], "/")
+	}
+
+	if routeIsDomain(routeWithoutPath, domainsInOrg) {
+		domain = routeWithoutPath
+	} else {
+		bits := strings.Split(routeWithoutPath, ".")
+		hostname = bits[0]
+		domain = strings.Join(bits[1:], ".")
+	}
+	return
+}
+
+func routeIsDomain(route string, domains []string) bool {
+	for _, domain := range domains {
+		if route == domain {
+			return true
+		}
+	}
+	return false
+}
+
+func routeIsBoundToApp(hostname, domain, path string, routes []plugin_models.GetApp_RouteSummary) bool {
+	for _, r := range routes {
+		if r.Host == hostname && r.Path == path && r.Domain.Name == domain {
+			return true
+		}
+	}
+
+	return false
 }
 
 func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppName string, testDomain string, space string) (pl []plan.Command) {
