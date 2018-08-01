@@ -113,16 +113,13 @@ func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []man
 		return false
 	}
 
-	alreadyBoundToApp := func(route string, routes []plugin_models.GetApp_RouteSummary) bool {
+	parseRoute := func(route string) (hostname, domain, path string) {
 		parts := strings.Split(route, "/")
 		routeWithoutPath := parts[0]
-		var path string
 		if len(parts) > 1 {
 			path = strings.Join(parts[1:], "/")
 		}
 
-		var hostname string
-		var domain string
 		if bindingToADomain(routeWithoutPath, domainsInOrg) {
 			domain = routeWithoutPath
 		} else {
@@ -130,7 +127,10 @@ func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []man
 			hostname = bits[0]
 			domain = strings.Join(bits[1:], ".")
 		}
+		return
+	}
 
+	alreadyBoundToApp := func(hostname, domain, path string, routes []plugin_models.GetApp_RouteSummary) bool {
 		for _, r := range routes {
 			if r.Host == hostname && r.Path == path && r.Domain.Name == domain {
 				return true
@@ -141,24 +141,16 @@ func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []man
 	}
 
 	for _, route := range routes {
-		if alreadyBoundToApp(route.Route, candidateAppState.Routes) {
+		hostname, domain, path := parseRoute(route.Route)
+
+		if alreadyBoundToApp(hostname, domain, path, candidateAppState.Routes) {
 			continue
-		}
-		parts := strings.Split(route.Route, "/")
-		routeWithoutPath := parts[0]
-		var path string
-		if len(parts) > 1 {
-			path = strings.Join(parts[1:], "/")
 		}
 
 		args := []string{"map-route"}
-		if bindingToADomain(routeWithoutPath, domainsInOrg) {
-			args = append(args, []string{candidateAppState.Name, routeWithoutPath}...)
+		if hostname == "" {
+			args = append(args, []string{candidateAppState.Name, domain}...)
 		} else {
-			bits := strings.Split(routeWithoutPath, ".")
-			hostname := bits[0]
-			domain := strings.Join(bits[1:], ".")
-
 			args = append(args, []string{candidateAppState.Name, domain, "-n", hostname}...)
 		}
 
