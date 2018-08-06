@@ -29,6 +29,11 @@
   name = "code.cloudfoundry.org/cli"
   version = "6.37.0"
 
+[[constraint]]
+  name = "github.com/prometheus/client_golang"
+  revision = "bcbbc08eb2ddff3af83bbf11e7ec13b4fd730b6e"
+
+
 [prune]
   go-tests = true
   unused-packages = true

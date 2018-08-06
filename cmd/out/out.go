@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/afero"
+	"github.com/springernature/halfpipe-cf-plugin/config"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/plan/resource"
-	"github.com/springernature/halfpipe-cf-plugin/config"
-	"github.com/spf13/afero"
-	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 func main() {
@@ -56,12 +56,17 @@ func main() {
 
 	if err != nil {
 		logger.Println(err)
-		syscall.Exit(1)
-	}
-
-	if err = p.Execute(resource.NewCFCliExecutor(), logger); err != nil {
 		os.Exit(1)
 	}
+
+	metrics := resource.NewMetrics(request)
+
+	if err = p.Execute(resource.NewCFCliExecutor(), logger); err != nil {
+		metrics.Failure()
+		os.Exit(1)
+	}
+
+	metrics.Success()
 
 	finished := time.Now()
 

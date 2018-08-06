@@ -3,6 +3,7 @@ package resource
 import (
 	"errors"
 	"fmt"
+
 	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
@@ -12,11 +13,12 @@ type Request struct {
 }
 
 type Source struct {
-	API      string
-	Org      string
-	Space    string
-	Username string
-	Password string
+	API                  string
+	Org                  string
+	Space                string
+	Username             string
+	Password             string
+	PrometheusGatewayURL string
 }
 
 type Params struct {
