@@ -1,20 +1,26 @@
 package plugin
 
 import (
-	"testing"
-
-	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/plugin/models"
+	"testing"
 	"github.com/stretchr/testify/assert"
-	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"errors"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"fmt"
 )
 
 type mockAppsGetter struct {
 	apps      []plugin_models.GetAppsModel
 	appsError error
+	app       plugin_models.GetAppModel
+	appError  error
 	cliError  error
 	cliOutput []string
+}
+
+func (m mockAppsGetter) GetApp(appName string) (plugin_models.GetAppModel, error) {
+	return m.app, m.appError
 }
 
 func (m mockAppsGetter) CliCommandWithoutTerminalOutput(args ...string) ([]string, error) {
@@ -40,6 +46,16 @@ func (m mockAppsGetter) WithApps(apps []plugin_models.GetAppsModel) mockAppsGett
 	return m
 }
 
+func (m mockAppsGetter) WithApp(app plugin_models.GetAppModel) mockAppsGetter {
+	m.app = app
+	return m
+}
+
+func (m mockAppsGetter) WithGetAppError(err error) mockAppsGetter {
+	m.appError = err
+	return m
+}
+
 func (m mockAppsGetter) WithCliOutput(cliOutput []string) mockAppsGetter {
 	m.cliOutput = cliOutput
 	return m
@@ -50,301 +66,697 @@ func newMockAppsGetter() mockAppsGetter {
 	}
 }
 
-var domains = []string{
-	"Getting domains in org myOrg as myUser...",
-	"name                                 status   type",
-	"domain1.com                          shared",
-	"domain2.com                          shared",
-	"this.should.be.without.hostname.com  owned",}
-
-func TestGivesBackErrorIfGetAppsFails(t *testing.T) {
+func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
 	expectedError := errors.New("error")
-	promote := NewPromotePlanner(newMockAppsGetter().WithGetAppsError(expectedError))
+	promote := NewPromotePlanner(newMockAppsGetter().WithGetAppError(expectedError))
 
 	_, err := promote.GetPlan(manifest.Application{}, Request{})
 
 	assert.Equal(t, expectedError, err)
 }
 
-func TestGivesBackAPromotePlanWhenThereIsNoOldApp(t *testing.T) {
-	application := manifest.Application{
-		Name: "my-app",
-		Routes: []manifest.Route{
-			{"my-route1.domain1.com"},
-			{"my-route2.domain2.com"},
-			{"my-route3.domain3.com/path"},
-			{"this.should.be.without.hostname.com"},
-			{"this.should.be.without.hostname.com/some/other/path"},
-		},
-	}
-	testDomain := "domain.com"
+func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
+	promote := NewPromotePlanner(newMockAppsGetter().WithApp(plugin_models.GetAppModel{
+		Name:  "myApp-CANDIDATE",
+		State: "stopped",
+	}))
 
-	candidateAppName := createCandidateAppName(application.Name)
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
-		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("map-route", candidateAppName, "domain3.com", "-n", "my-route3", "--path", "path"),
-		plan.NewCfCommand("map-route", candidateAppName, "this.should.be.without.hostname.com"),
-		plan.NewCfCommand("map-route", candidateAppName, "this.should.be.without.hostname.com", "--path", "some/other/path"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-dev-CANDIDATE"),
-		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
-	}
+	_, err := promote.GetPlan(manifest.Application{}, Request{})
 
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps([]plugin_models.GetAppsModel{{Name: candidateAppName}}).WithCliOutput(domains))
-
-	commands, err := promote.GetPlan(application, Request{
-		TestDomain: testDomain,
-		Space:      "dev",
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
+	assert.Equal(t, ErrCandidateNotRunning, err)
 }
 
-func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsNoOldApp(t *testing.T) {
-	application := manifest.Application{
-		Name:    "my-app",
-		NoRoute: true,
-	}
-	testDomain := "domain.com"
+func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
+	expectedError := errors.New("Mehp")
 
-	candidateAppName := createCandidateAppName(application.Name)
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("rename", candidateAppName, application.Name),
-	}
+	promote := NewPromotePlanner(newMockAppsGetter().
+		WithApp(plugin_models.GetAppModel{
+		Name:  "myApp-CANDIDATE",
+		State: "started",
+	}).
+		WithGetAppsError(expectedError))
 
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps([]plugin_models.GetAppsModel{{Name: candidateAppName}}))
-
-	commands, err := promote.GetPlan(application, Request{
-		TestDomain: testDomain,
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
-}
-
-func TestGivesBackAPromotePlanWhenThereIsAnOldAppButWithDifferentName(t *testing.T) {
-	application := manifest.Application{
-		Name: "my-app",
-		Routes: []manifest.Route{
-			{"my-route1.domain1.com"},
-			{"my-route2.domain2.com"},
-		},
-	}
-	testDomain := "domain.com"
-
-	candidateAppName := createCandidateAppName(application.Name)
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
-		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-dev-CANDIDATE"),
-		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
-	}
-
-	apps := []plugin_models.GetAppsModel{
-		{Name: "Ima a app"},
-		{Name: "Me 2 lol"},
-		{Name: candidateAppName},
-	}
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps(apps).WithCliOutput(domains))
-
-	commands, err := promote.GetPlan(application, Request{
-		TestDomain: testDomain,
-		Space:      "dev",
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
-}
-
-func TestGivesBackAPromotePlanWhenThereIsAnOldApp(t *testing.T) {
-	application := manifest.Application{
-		Name: "my-app",
-		Routes: []manifest.Route{
-			{"my-route1.domain1.com"},
-			{"my-route2.domain2.com"},
-		},
-	}
-	testDomain := "domain.com"
-
-	candidateAppName := createCandidateAppName(application.Name)
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
-		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-live-CANDIDATE"),
-		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
-		plan.NewCfCommand("stop", "my-app-OLD"),
-		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
-	}
-
-	apps := []plugin_models.GetAppsModel{
-		{Name: application.Name},
-		{Name: candidateAppName},
-	}
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps(apps).WithCliOutput(domains))
-
-	commands, err := promote.GetPlan(application, Request{
-		TestDomain: testDomain,
-		Space:      "live",
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
-}
-
-func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldApp(t *testing.T) {
-	application := manifest.Application{
-		Name:    "my-app",
-		NoRoute: true,
-	}
-	testDomain := "domain.com"
-
-	candidateAppName := createCandidateAppName(application.Name)
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
-		plan.NewCfCommand("stop", "my-app-OLD"),
-		plan.NewCfCommand("rename", candidateAppName, application.Name),
-	}
-
-	apps := []plugin_models.GetAppsModel{
-		{Name: application.Name},
-		{Name: candidateAppName},
-	}
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps(apps))
-
-	commands, err := promote.GetPlan(application, Request{
-		TestDomain: testDomain,
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
-}
-
-func TestReturnsErrorFromCliCommandWithoutTerminalOutput(t *testing.T) {
-	expectedError := errors.New("Meehp")
-	promote := NewPromotePlanner(newMockAppsGetter().WithCliError(expectedError))
-
-	application := manifest.Application{
-		Name: "my-app",
-		Routes: []manifest.Route{
-			{"my-route1.domain1.com"},
-		},
-	}
-
-	_, err := promote.GetPlan(application, Request{})
+	_, err := promote.GetPlan(manifest.Application{}, Request{})
 	assert.Equal(t, expectedError, err)
 }
 
-func TestGivesBackAPromotePlanWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
-	application := manifest.Application{
-		Name: "my-app",
+func TestWorkerApp(t *testing.T) {
+	t.Run("No previously deployed version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}))
+
+		manifest := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		}
+
+		plan, err := promote.GetPlan(manifest, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
+	t.Run("One previously deployed stopped version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}).
+			WithApps([]plugin_models.GetAppsModel{
+			{
+				Name:  "myApp",
+				State: "stopped",
+			},
+		}))
+
+		manifest := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		}
+
+		plan, err := promote.GetPlan(manifest, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
+	t.Run("One previously deployed started version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}).
+			WithApps([]plugin_models.GetAppsModel{
+			{
+				Name:  "myApp",
+				State: "started",
+			},
+		}))
+
+		manifest := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+			plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
+			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		}
+
+		plan, err := promote.GetPlan(manifest, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
+	t.Run("One previously deployed started version with an stopped old version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}).
+			WithApps([]plugin_models.GetAppsModel{
+			{
+				Name:  "myApp",
+				State: "started",
+			},
+			{
+				Name:  "myApp-OLD",
+				State: "stopped",
+			},
+		}))
+
+		manifest := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("rename", createOldAppName(manifest.Name), createDeleteName(manifest.Name, 0)),
+			plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+			plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
+			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		}
+
+		plan, err := promote.GetPlan(manifest, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+}
+
+func TestAppWithRoute(t *testing.T) {
+	appName := "myApp"
+	testDomain := "test.com"
+	appCandidateHostname := "myApp-dev-CANDIDATE"
+	space := "dev"
+
+	cfDomains := []string{
+		"Getting domains in org myOrg as myUser...",
+		"name                                 status   type",
+		"test.com                             shared",
+		"domain.com                           shared",
+		"bindToDomain.com                     owned",
+	}
+
+	route1Host := "myRoute"
+	route1Domain := "domain.com"
+	route1 := fmt.Sprintf("%s.%s", route1Host, route1Domain)
+
+	route2 := "bindToDomain.com"
+
+	route3Host := "myRouteWithPath"
+	route3Domain := "domain.com"
+	route3Path := "yolo"
+	route3 := fmt.Sprintf("%s.%s/%s", route3Host, route3Domain, route3Path)
+
+	route4Domain := "domain.com"
+	route4Path := "kehe/keho"
+	route4 := fmt.Sprintf("%s/%s", route4Domain, route4Path)
+
+	manifest := manifest.Application{
+		Name: appName,
 		Routes: []manifest.Route{
-			{"my-route1.domain1.com"},
-			{"this.should.be.without.hostname.com"},
-			{"my-route2.domain2.com"},
+			{Route: route1},
+			{Route: route2},
+			{Route: route3},
+			{Route: route4},
 		},
 	}
-	testDomain := "domain.com"
 
-	candidateAppName := createCandidateAppName(application.Name)
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("map-route", candidateAppName, "domain1.com", "-n", "my-route1"),
-		plan.NewCfCommand("map-route", candidateAppName, "this.should.be.without.hostname.com"),
-		plan.NewCfCommand("map-route", candidateAppName, "domain2.com", "-n", "my-route2"),
-		plan.NewCfCommand("unmap-route", candidateAppName, testDomain, "-n", "my-app-yolo-CANDIDATE"),
-		plan.NewCfCommand("rename", "my-app-OLD", "my-app-DELETE"),
-		plan.NewCfCommand("rename", application.Name, "my-app-OLD"),
-		plan.NewCfCommand("stop", "my-app-OLD"),
-		plan.NewCfCommand("rename", "my-app-CANDIDATE", application.Name),
+	candidateApp := plugin_models.GetAppModel{
+		Name:  createCandidateAppName(appName),
+		State: "started",
+		Routes: []plugin_models.GetApp_RouteSummary{
+			{
+				Host: appCandidateHostname,
+				Domain: plugin_models.GetApp_DomainFields{
+					Name: testDomain,
+				},
+			},
+		},
 	}
 
-	apps := []plugin_models.GetAppsModel{
-		{Name: application.Name},
-		{Name: candidateAppName},
-		{Name: createOldAppName(application.Name)},
-	}
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps(apps).WithCliOutput(domains))
-
-	commands, err := promote.GetPlan(application, Request{
+	request := Request{
 		TestDomain: testDomain,
-		Space:      "yolo",
+		Space:      space,
+	}
+
+	t.Run("Errors out if we cannot get domains in org", func(t *testing.T) {
+		expectedError := errors.New("Meeehp")
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(candidateApp).
+			WithCliError(expectedError))
+
+		_, err := promote.GetPlan(manifest, request)
+		assert.Equal(t, expectedError, err)
 	})
 
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
-}
+	t.Run("No previously deployed version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(candidateApp).
+			WithCliOutput(cfDomains).
+			WithApps([]plugin_models.GetAppsModel{
+			{Name: createCandidateAppName(appName)},
+		}))
 
-func TestGivesBackAPromotePlanForAWorkerAppWhenThereIsAnOldAppAndAnEvenOlder(t *testing.T) {
-	application := manifest.Application{
-		Name:    "my-app",
-		NoRoute: true,
-	}
-	testDomain := "domain.com"
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route2),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+			plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+		}
 
-	candidateAppName := createCandidateAppName(application.Name)
-	oldAppName := createOldAppName(application.Name)
-	deleteAppName := createDeleteName(application.Name, 0)
-
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("rename", oldAppName, deleteAppName),
-		plan.NewCfCommand("rename", application.Name, oldAppName),
-		plan.NewCfCommand("stop", oldAppName),
-		plan.NewCfCommand("rename", candidateAppName, application.Name),
-	}
-
-	apps := []plugin_models.GetAppsModel{
-		{Name: application.Name},
-		{Name: candidateAppName},
-		{Name: createOldAppName(application.Name)},
-	}
-	promote := NewPromotePlanner(newMockAppsGetter().WithApps(apps))
-
-	commands, err := promote.GetPlan(application, Request{
-		TestDomain: testDomain,
+		plan, err := promote.GetPlan(manifest, request)
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
 	})
 
-	assert.Nil(t, err)
-	assert.Equal(t, expectedPlan, commands)
+	t.Run("One previously deployed started live version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(candidateApp).
+			WithCliOutput(cfDomains).
+			WithApps([]plugin_models.GetAppsModel{
+			{Name: createCandidateAppName(appName), State: "started"},
+			{Name: appName, State: "started"},
+		}))
+
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route2),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+			plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			plan.NewCfCommand("rename", appName, createOldAppName(appName)),
+			plan.NewCfCommand("stop", createOldAppName(appName)),
+			plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+		}
+
+		plan, err := promote.GetPlan(manifest, request)
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
+	t.Run("One previously deployed started live version and a stopped older version", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(candidateApp).
+			WithCliOutput(cfDomains).
+			WithApps([]plugin_models.GetAppsModel{
+			{
+				Name:  createCandidateAppName(appName),
+				State: "started",
+			},
+			{
+				Name:  createOldAppName(appName),
+				State: "stopped",
+			},
+			{
+				Name:  appName,
+				State: "started",
+			},
+		}))
+
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route2),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+			plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			plan.NewCfCommand("rename", createOldAppName(appName), createDeleteName(appName, 0)),
+			plan.NewCfCommand("rename", appName, createOldAppName(appName)),
+			plan.NewCfCommand("stop", createOldAppName(appName)),
+			plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+		}
+
+		plan, err := promote.GetPlan(manifest, request)
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
 }
 
-func TestRenamesOldAppAndDeleteApp(t *testing.T) {
-	application := manifest.Application{
-		Name:    "my-app",
-		NoRoute: true,
+func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
+	appName := "myApp"
+	testDomain := "test.com"
+	appCandidateHostname := "myApp-dev-CANDIDATE"
+	space := "dev"
+
+	cfDomains := []string{
+		"Getting domains in org myOrg as myUser...",
+		"name                                 status   type",
+		"test.com                             shared",
+		"domain.com                           shared",
+		"bindToDomain.com                     owned",
 	}
 
-	oldAppName := createOldAppName(application.Name)
+	route1Host := "myRoute"
+	route1Domain := "domain.com"
+	route1 := fmt.Sprintf("%s.%s", route1Host, route1Domain)
 
-	apps := []plugin_models.GetAppsModel{
-		{Name: "my-app-OLD"},
-		{Name: "my-app-DELETE"},
-		{Name: "my-app-DELETE-1"},
+	route2 := "bindToDomain.com"
+
+	route3Host := "myRouteWithPath"
+	route3Domain := "domain.com"
+	route3Path := "yolo"
+	route3 := fmt.Sprintf("%s.%s/%s", route3Host, route3Domain, route3Path)
+
+	route4Domain := "domain.com"
+	route4Path := "kehe/keho"
+	route4 := fmt.Sprintf("%s/%s", route4Domain, route4Path)
+
+	manifest := manifest.Application{
+		Name: appName,
+		Routes: []manifest.Route{
+			{Route: route1},
+			{Route: route2},
+			{Route: route3},
+			{Route: route4},
+		},
 	}
 
-	planRename := renameOldAppToDelete(apps, oldAppName, application.Name)
-
-	expectedPlan := []plan.Command{
-		plan.NewCfCommand("rename", oldAppName, "my-app-DELETE-2"),
+	candidateApp := plugin_models.GetAppModel{
+		Name:  createCandidateAppName(appName),
+		State: "started",
+		Routes: []plugin_models.GetApp_RouteSummary{
+			{
+				Host: appCandidateHostname,
+				Domain: plugin_models.GetApp_DomainFields{
+					Name: testDomain,
+				},
+			},
+		},
 	}
-	assert.Equal(t, expectedPlan, planRename)
+
+	request := Request{
+		TestDomain: testDomain,
+		Space:      space,
+	}
+
+	t.Run("No previously deployed version", func(t *testing.T) {
+		/*
+		Normal run would look like
+				$ cf map-route appName-CANDIDATE domain.com, -n myRoute [1]
+				$ cf map-route appName-CANDIDATE route2 bindToDomain.com [2]
+				$ cf map-route appName-CANDIDATE domain.com, -n myRouteWithPath, --path yolo [3]
+				$ cf map-route appName-CANDIDATE domain.com --path kehe/keho [4]
+				$ cf unmap-route appName-CANDIDATE test.com -n myApp-dev-CANDIDATE [5]
+				$ cf rename appName-CANDIDATE appName [6]
+		 */
+
+		t.Run("previous promote failed at step [4]", func(t *testing.T) {
+			candidateApp.Routes = []plugin_models.GetApp_RouteSummary{
+				{
+					Host: appCandidateHostname,
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: testDomain,
+					},
+				}, // From halfpipe-promote
+				{
+					Host: "myRoute",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[1]
+				{
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "bindToDomain.com",
+					},
+				}, //[2]
+				{
+					Host: "myRouteWithPath",
+					Path: "yolo",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[3]
+			}
+
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(candidateApp).
+				WithCliOutput(cfDomains).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: createCandidateAppName(appName)},
+			}))
+
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+				plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+				plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+			}
+
+			plan, err := promote.GetPlan(manifest, request)
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+		t.Run("previous promote failed at step [5]", func(t *testing.T) {
+			candidateApp.Routes = []plugin_models.GetApp_RouteSummary{
+				{
+					Host: appCandidateHostname,
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: testDomain,
+					},
+				}, // From halfpipe-promote
+				{
+					Host: "myRoute",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[1]
+				{
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "bindToDomain.com",
+					},
+				}, //[2]
+				{
+					Host: "myRouteWithPath",
+					Path: "yolo",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[3]
+				{
+					Host: "",
+					Path: "kehe/keho",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[4]
+			}
+
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(candidateApp).
+				WithCliOutput(cfDomains).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: createCandidateAppName(appName)},
+			}))
+
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+				plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+			}
+
+			plan, err := promote.GetPlan(manifest, request)
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+		t.Run("previous promote failed at step [6]", func(t *testing.T) {
+			// Notice that there is no test-route, so [5] ran last promote run before failing at [6]
+			candidateApp.Routes = []plugin_models.GetApp_RouteSummary{
+				{
+					Host: "myRoute",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[1]
+				{
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "bindToDomain.com",
+					},
+				}, //[2]
+				{
+					Host: "myRouteWithPath",
+					Path: "yolo",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[3]
+				{
+					Host: "",
+					Path: "kehe/keho",
+					Domain: plugin_models.GetApp_DomainFields{
+						Name: "domain.com",
+					},
+				}, //[4]
+			}
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(candidateApp).
+				WithCliOutput(cfDomains).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: createCandidateAppName(appName)},
+			}))
+
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+			}
+
+			plan, err := promote.GetPlan(manifest, request)
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+	})
+
 }
 
-func TestRenamesOldAppWhenNoDeletePresent(t *testing.T) {
-	application := manifest.Application{
-		Name:    "my-app",
-		NoRoute: true,
-	}
+func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
+	/* In TestAppWithRouteWhenPreviousPromoteFailure we test all the mapping and unmapping.
+    These will always happen before the stopping and renaming of older apps thus we can
+	test with worker app here as its easier to setup tests.
+	*/
 
-	oldAppName := createOldAppName(application.Name)
+	t.Run("No previously deployed version", func(t *testing.T) {
+		/*
+		Normal run would look like
+		$ cf rename appName-CANDIDATE appName [1]
+		*/
 
-	apps := []plugin_models.GetAppsModel{
-		{Name: "my-app-OLD"},
-	}
+		//
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}).
+			WithApps([]plugin_models.GetAppsModel{
+			{Name: "myApp-CANDIDATE", State: "started"},
+		}))
 
-	planRename := renameOldAppToDelete(apps, oldAppName, application.Name)
+		manifest := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := plan.Plan{
+			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		}
 
-	expectedPlan := []plan.Command{
-		plan.NewCfCommand("rename", oldAppName, "my-app-DELETE"),
-	}
-	assert.Equal(t, expectedPlan, planRename)
+		plan, err := promote.GetPlan(manifest, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
+	t.Run("One previously running deployed version", func(t *testing.T) {
+		/*
+		Normal run would look like
+		$ cf rename appName appName-OLD [1]
+		$ cf stop appName-OLD [2]
+		$ cf rename appName-CANDIDATE appName [3]
+		*/
+
+		t.Run("previous promote failed at step [2]", func(t *testing.T) {
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(plugin_models.GetAppModel{
+				Name:  "myApp-CANDIDATE",
+				State: "started",
+			}).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: "myApp-CANDIDATE", State: "started"},
+				{Name: "myApp-OLD", State: "started"},
+			}))
+
+			manifest := manifest.Application{
+				Name:    "myApp",
+				NoRoute: true,
+			}
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
+				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			}
+
+			plan, err := promote.GetPlan(manifest, Request{})
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+		t.Run("previous promote failed at step [3]", func(t *testing.T) {
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(plugin_models.GetAppModel{
+				Name:  "myApp-CANDIDATE",
+				State: "started",
+			}).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: "myApp-CANDIDATE", State: "started"},
+				{Name: "myApp-OLD", State: "stopped"},
+			}))
+
+			manifest := manifest.Application{
+				Name:    "myApp",
+				NoRoute: true,
+			}
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			}
+
+			plan, err := promote.GetPlan(manifest, Request{})
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+	})
+
+	t.Run("One previously deployed started version with an stopped old version", func(t *testing.T) {
+		/*
+		Normal run would look like
+		$ cf rename appName-OLD appName-DELETE [1]
+		$ cf rename appName appName-OLD [2]
+		$ cf stop appName-OLD [3]
+		$ cf rename appName-CANDIDATE appName [4]
+		*/
+
+		t.Run("previous promote failed at step [2]", func(t *testing.T) {
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(plugin_models.GetAppModel{
+				Name:  "myApp-CANDIDATE",
+				State: "started",
+			}).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: "myApp-CANDIDATE", State: "started"},
+				{Name: "myApp-DELETE", State: "stopped"},
+				{Name: "myApp", State: "started"},
+			}))
+
+			manifest := manifest.Application{
+				Name:    "myApp",
+				NoRoute: true,
+			}
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+				plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
+				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			}
+
+			plan, err := promote.GetPlan(manifest, Request{})
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+		t.Run("previous promote failed at step [3]", func(t *testing.T) {
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(plugin_models.GetAppModel{
+				Name:  "myApp-CANDIDATE",
+				State: "started",
+			}).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: "myApp-CANDIDATE", State: "started"},
+				{Name: "myApp-DELETE", State: "stopped"},
+				{Name: "myApp-OLD", State: "started"},
+			}))
+
+			manifest := manifest.Application{
+				Name:    "myApp",
+				NoRoute: true,
+			}
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
+				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			}
+
+			plan, err := promote.GetPlan(manifest, Request{})
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+		t.Run("previous promote failed at step [4]", func(t *testing.T) {
+			promote := NewPromotePlanner(newMockAppsGetter().
+				WithApp(plugin_models.GetAppModel{
+				Name:  "myApp-CANDIDATE",
+				State: "started",
+			}).
+				WithApps([]plugin_models.GetAppsModel{
+				{Name: "myApp-CANDIDATE", State: "started"},
+				{Name: "myApp-DELETE", State: "stopped"},
+				{Name: "myApp-OLD", State: "stopped"},
+			}))
+
+			manifest := manifest.Application{
+				Name:    "myApp",
+				NoRoute: true,
+			}
+			expectedPlan := plan.Plan{
+				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			}
+
+			plan, err := promote.GetPlan(manifest, Request{})
+			assert.Nil(t, err)
+			assert.Equal(t, expectedPlan, plan)
+		})
+
+	})
+
 }
