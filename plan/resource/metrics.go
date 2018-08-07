@@ -3,6 +3,10 @@ package resource
 import (
 	"time"
 
+	"regexp"
+
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 )
@@ -54,12 +58,19 @@ func (p *prometheusMetrics) Failure() error {
 func (p *prometheusMetrics) push(metrics ...prometheus.Collector) error {
 	if p.request.Source.PrometheusGatewayURL != "" {
 		pusher := push.New(p.request.Source.PrometheusGatewayURL, p.request.Params.Command)
-		pusher.Grouping("cf_api", p.request.Source.API)
-		pusher.Grouping("cf_org", p.request.Source.Org)
+		pusher.Grouping("cf_api", sanitize(p.request.Source.API))
+		pusher.Grouping("cf_org", sanitize(p.request.Source.Org))
 		for _, m := range metrics {
 			pusher.Collector(m)
 		}
-		return pusher.Add()
+		err := pusher.Add()
+		if err != nil {
+			return fmt.Errorf("error sending metric to prometheus: %v", err)
+		}
 	}
 	return nil
+}
+
+func sanitize(s string) string {
+	return regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(s, "_")
 }

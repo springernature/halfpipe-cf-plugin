@@ -23,7 +23,7 @@ func TestNewPrometheusMetrics(t *testing.T) {
 	m := NewMetrics(Request{
 		Source: Source{
 			PrometheusGatewayURL: gateway.URL,
-			API:                  "some.cf.api",
+			API:                  "some/cf.api",
 			Org:                  "some-cf-org",
 		},
 		Params: Params{
@@ -35,8 +35,8 @@ func TestNewPrometheusMetrics(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, counter)
 	assert.True(t, strings.HasPrefix(path, "/metrics/job/promote/"), path)
-	assert.Contains(t, path, "cf_api/some.cf.api")
-	assert.Contains(t, path, "cf_org/some-cf-org")
+	assert.Contains(t, path, "cf_api/some_cf_api")
+	assert.Contains(t, path, "cf_org/some_cf_org")
 
 	err = m.Failure()
 	assert.Nil(t, err)
