@@ -16,6 +16,7 @@ func TestNewPrometheusMetrics(t *testing.T) {
 	gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path = r.URL.Path
 		counter++
+		w.WriteHeader(202)
 	}))
 	defer gateway.Close()
 
@@ -30,12 +31,14 @@ func TestNewPrometheusMetrics(t *testing.T) {
 		},
 	})
 
-	m.Success()
+	err := m.Success()
+	assert.Nil(t, err)
 	assert.Equal(t, 1, counter)
 	assert.True(t, strings.HasPrefix(path, "/metrics/job/promote/"), path)
 	assert.Contains(t, path, "cf_api/some.cf.api")
 	assert.Contains(t, path, "cf_org/some-cf-org")
 
-	//m.Failure()
-	//assert.Equal(t, 2, counter)
+	err = m.Failure()
+	assert.Nil(t, err)
+	assert.Equal(t, 2, counter)
 }

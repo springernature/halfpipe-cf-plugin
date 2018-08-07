@@ -62,11 +62,15 @@ func main() {
 	metrics := resource.NewMetrics(request)
 
 	if err = p.Execute(resource.NewCFCliExecutor(), logger); err != nil {
-		metrics.Failure()
+		if err = metrics.Failure(); err != nil {
+			logger.Println(err)
+		}
 		os.Exit(1)
 	}
 
-	metrics.Success()
+	if err = metrics.Success(); err != nil {
+		logger.Println(err)
+	}
 
 	finished := time.Now()
 

@@ -8,8 +8,8 @@ import (
 )
 
 type Metrics interface {
-	Success()
-	Failure()
+	Success() error
+	Failure() error
 }
 
 func NewMetrics(request Request) Metrics {
@@ -40,18 +40,18 @@ type prometheusMetrics struct {
 	timerHistogram prometheus.Histogram
 }
 
-func (p *prometheusMetrics) Success() {
+func (p *prometheusMetrics) Success() error {
 	p.successCounter.Inc()
 	p.timerHistogram.Observe(time.Now().Sub(p.startTime).Seconds())
-	p.push(p.successCounter, p.timerHistogram)
+	return p.push(p.successCounter, p.timerHistogram)
 }
 
-func (p *prometheusMetrics) Failure() {
+func (p *prometheusMetrics) Failure() error {
 	p.failureCounter.Inc()
-	p.push(p.failureCounter)
+	return p.push(p.failureCounter)
 }
 
-func (p *prometheusMetrics) push(metrics ...prometheus.Collector) {
+func (p *prometheusMetrics) push(metrics ...prometheus.Collector) error {
 	if p.request.Source.PrometheusGatewayURL != "" {
 		pusher := push.New(p.request.Source.PrometheusGatewayURL, p.request.Params.Command)
 		pusher.Grouping("cf_api", p.request.Source.API)
@@ -59,6 +59,7 @@ func (p *prometheusMetrics) push(metrics ...prometheus.Collector) {
 		for _, m := range metrics {
 			pusher.Collector(m)
 		}
-		pusher.Add()
+		return pusher.Add()
 	}
+	return nil
 }
