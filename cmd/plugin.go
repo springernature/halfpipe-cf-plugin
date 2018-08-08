@@ -8,9 +8,9 @@ import (
 
 	cfPlugin "code.cloudfoundry.org/cli/plugin"
 	"github.com/springernature/halfpipe-cf-plugin/config"
-	"github.com/springernature/halfpipe-cf-plugin/plan/plugin"
 	"github.com/spf13/afero"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 type Halfpipe struct{}
@@ -38,18 +38,18 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	manifestPath, appPath, testDomain, space := parseArgs(args)
-	pluginRequest := plugin.Request{
+	pluginRequest := plan.Request{
 		Command:      command,
 		ManifestPath: manifestPath,
 		AppPath:      appPath,
 		TestDomain:   testDomain,
 		Space:        space,
 	}
-
-	planner := plugin.NewPlanner(
-		plugin.NewPushPlanner(cliConnection),
-		plugin.NewPromotePlanner(cliConnection),
-		plugin.NewCleanupPlanner(cliConnection),
+	
+	planner := plan.NewPlanner(
+		plan.NewPushPlanner(cliConnection),
+		plan.NewPromotePlanner(cliConnection),
+		plan.NewCleanupPlanner(cliConnection),
 		manifest.NewManifestReadWrite(afero.Afero{Fs: afero.NewOsFs()}),
 	)
 

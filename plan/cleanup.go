@@ -1,7 +1,6 @@
-package plugin
+package plan
 
 import (
-	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"fmt"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
@@ -10,7 +9,7 @@ type cleanup struct {
 	appGetter AppGetter
 }
 
-func (p cleanup) GetPlan(application manifest.Application, request Request) (pl plan.Plan, err error) {
+func (p cleanup) GetPlan(application manifest.Application, request Request) (pl Plan, err error) {
 	deleteName := createDeleteName(application.Name, 0)
 
 	deletableApp, err := p.thereIsAnAppToBeDeleted(deleteName)
@@ -19,7 +18,7 @@ func (p cleanup) GetPlan(application manifest.Application, request Request) (pl 
 	}
 
 	if deletableApp {
-		command := plan.NewCfCommand(
+		command := NewCfCommand(
 			"delete",
 			deleteName,
 			"-f",

@@ -1,9 +1,8 @@
-package plugin
+package plan
 
 import (
 	"testing"
 
-	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
@@ -52,8 +51,8 @@ func TestGivesBackADeletePlan(t *testing.T) {
 	}
 	expectedApplicationName := createDeleteName(application.Name, 0)
 
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("delete", expectedApplicationName, "-f"),
+	expectedPlan := Plan{
+		NewCfCommand("delete", expectedApplicationName, "-f"),
 	}
 
 	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{Name: "my-app-DELETE"}, nil))

@@ -1,4 +1,4 @@
-package plugin
+package plan
 
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"errors"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
-	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"fmt"
 )
 
@@ -112,8 +111,8 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		expectedPlan := Plan{
+			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 		}
 
 		plan, err := promote.GetPlan(manifest, Request{})
@@ -138,9 +137,9 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		expectedPlan := Plan{
+			NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 		}
 
 		plan, err := promote.GetPlan(manifest, Request{})
@@ -165,10 +164,10 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-			plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
-			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		expectedPlan := Plan{
+			NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+			NewCfCommand("stop", createOldAppName(manifest.Name)),
+			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 		}
 
 		plan, err := promote.GetPlan(manifest, Request{})
@@ -197,11 +196,11 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("rename", createOldAppName(manifest.Name), createDeleteName(manifest.Name, 0)),
-			plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-			plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
-			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		expectedPlan := Plan{
+			NewCfCommand("rename", createOldAppName(manifest.Name), createDeleteName(manifest.Name, 0)),
+			NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+			NewCfCommand("stop", createOldAppName(manifest.Name)),
+			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 		}
 
 		plan, err := promote.GetPlan(manifest, Request{})
@@ -285,13 +284,13 @@ func TestAppWithRoute(t *testing.T) {
 			{Name: createCandidateAppName(appName)},
 		}))
 
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route2),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-			plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-			plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+		expectedPlan := Plan{
+			NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
+			NewCfCommand("map-route", createCandidateAppName(appName), route2),
+			NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+			NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			NewCfCommand("rename", createCandidateAppName(appName), appName),
 		}
 
 		plan, err := promote.GetPlan(manifest, request)
@@ -308,15 +307,15 @@ func TestAppWithRoute(t *testing.T) {
 			{Name: appName, State: "started"},
 		}))
 
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route2),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-			plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-			plan.NewCfCommand("rename", appName, createOldAppName(appName)),
-			plan.NewCfCommand("stop", createOldAppName(appName)),
-			plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+		expectedPlan := Plan{
+			NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
+			NewCfCommand("map-route", createCandidateAppName(appName), route2),
+			NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+			NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			NewCfCommand("rename", appName, createOldAppName(appName)),
+			NewCfCommand("stop", createOldAppName(appName)),
+			NewCfCommand("rename", createCandidateAppName(appName), appName),
 		}
 
 		plan, err := promote.GetPlan(manifest, request)
@@ -343,16 +342,16 @@ func TestAppWithRoute(t *testing.T) {
 			},
 		}))
 
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route2),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
-			plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-			plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-			plan.NewCfCommand("rename", createOldAppName(appName), createDeleteName(appName, 0)),
-			plan.NewCfCommand("rename", appName, createOldAppName(appName)),
-			plan.NewCfCommand("stop", createOldAppName(appName)),
-			plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+		expectedPlan := Plan{
+			NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
+			NewCfCommand("map-route", createCandidateAppName(appName), route2),
+			NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+			NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			NewCfCommand("rename", createOldAppName(appName), createDeleteName(appName, 0)),
+			NewCfCommand("rename", appName, createOldAppName(appName)),
+			NewCfCommand("stop", createOldAppName(appName)),
+			NewCfCommand("rename", createCandidateAppName(appName), appName),
 		}
 
 		plan, err := promote.GetPlan(manifest, request)
@@ -464,10 +463,10 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				{Name: createCandidateAppName(appName)},
 			}))
 
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-				plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-				plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+			expectedPlan := Plan{
+				NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
+				NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+				NewCfCommand("rename", createCandidateAppName(appName), appName),
 			}
 
 			plan, err := promote.GetPlan(manifest, request)
@@ -517,9 +516,9 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				{Name: createCandidateAppName(appName)},
 			}))
 
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-				plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+			expectedPlan := Plan{
+				NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+				NewCfCommand("rename", createCandidateAppName(appName), appName),
 			}
 
 			plan, err := promote.GetPlan(manifest, request)
@@ -563,8 +562,8 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				{Name: createCandidateAppName(appName)},
 			}))
 
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("rename", createCandidateAppName(appName), appName),
+			expectedPlan := Plan{
+				NewCfCommand("rename", createCandidateAppName(appName), appName),
 			}
 
 			plan, err := promote.GetPlan(manifest, request)
@@ -602,8 +601,8 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := plan.Plan{
-			plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+		expectedPlan := Plan{
+			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 		}
 
 		plan, err := promote.GetPlan(manifest, Request{})
@@ -634,9 +633,9 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
-				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			expectedPlan := Plan{
+				NewCfCommand("stop", createOldAppName(manifest.Name)),
+				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 			}
 
 			plan, err := promote.GetPlan(manifest, Request{})
@@ -659,8 +658,8 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			expectedPlan := Plan{
+				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 			}
 
 			plan, err := promote.GetPlan(manifest, Request{})
@@ -695,10 +694,10 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-				plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
-				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			expectedPlan := Plan{
+				NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
+				NewCfCommand("stop", createOldAppName(manifest.Name)),
+				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 			}
 
 			plan, err := promote.GetPlan(manifest, Request{})
@@ -722,9 +721,9 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("stop", createOldAppName(manifest.Name)),
-				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			expectedPlan := Plan{
+				NewCfCommand("stop", createOldAppName(manifest.Name)),
+				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 			}
 
 			plan, err := promote.GetPlan(manifest, Request{})
@@ -748,8 +747,8 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := plan.Plan{
-				plan.NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			expectedPlan := Plan{
+				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
 			}
 
 			plan, err := promote.GetPlan(manifest, Request{})

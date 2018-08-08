@@ -1,17 +1,16 @@
-package plugin
+package plan
 
 import (
 	"testing"
 
 	"code.cloudfoundry.org/cli/cf/errors"
-	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 )
 
 type mockPlanner struct {
-	plan  plan.Plan
+	plan  Plan
 	error error
 }
 
@@ -25,13 +24,13 @@ func newMockPlannerWithError(err error) mockPlanner {
 	}
 }
 
-func newMockPlannerWithPlan(plan plan.Plan) mockPlanner {
+func newMockPlannerWithPlan(plan Plan) mockPlanner {
 	return mockPlanner{
 		plan: plan,
 	}
 }
 
-func (m mockPlanner) GetPlan(application manifest.Application, request Request) (plan.Plan, error) {
+func (m mockPlanner) GetPlan(application manifest.Application, request Request) (Plan, error) {
 	return m.plan, m.error
 }
 
@@ -93,8 +92,8 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 }
 
 func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
-	expectedPlan := plan.Plan{
-		plan.NewCfCommand("blurgh"),
+	expectedPlan := Plan{
+		NewCfCommand("blurgh"),
 	}
 
 	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), manifestWithOneApp)

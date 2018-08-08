@@ -1,7 +1,6 @@
-package plugin
+package plan
 
 import (
-	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/plugin/models"
@@ -21,7 +20,7 @@ func NewPromotePlanner(appsGetter AppsGetter) Planner {
 	}
 }
 
-func (p promote) GetPlan(manifest manifest.Application, request Request) (plan plan.Plan, err error) {
+func (p promote) GetPlan(manifest manifest.Application, request Request) (plan Plan, err error) {
 	/*
 		We must fetch the app under deployment with "cf app appName-CANDIDATE" as the call to "cf apps" in
 		p.GetPreviousAppState does not include path information in the routes..
@@ -103,7 +102,7 @@ func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []strin
 	return
 }
 
-func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []manifest.Route, domainsInOrg []string) (pl []plan.Command) {
+func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []manifest.Route, domainsInOrg []string) (pl []Command) {
 	for _, route := range routes {
 		hostname, domain, path := parseRoute(route.Route, domainsInOrg)
 
@@ -125,7 +124,7 @@ func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []man
 			args = append(args, []string{"--path", path}...)
 		}
 
-		pl = append(pl, plan.NewCfCommand(args...))
+		pl = append(pl, NewCfCommand(args...))
 	}
 	return
 }
@@ -166,7 +165,7 @@ func routeIsBoundToApp(hostname, domain, path string, routes []plugin_models.Get
 	return false
 }
 
-func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppName string, testDomain string, space string) (pl []plan.Command) {
+func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppName string, testDomain string, space string) (pl []Command) {
 	appHasRoute := func(hostname string, domain string, routes []plugin_models.GetApp_RouteSummary) bool {
 		for _, route := range routes {
 			if route.Host == hostname && route.Domain.Name == domain {
@@ -178,13 +177,13 @@ func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppNam
 
 	testHostname := fmt.Sprintf("%s-%s-CANDIDATE", manifestAppName, space)
 	if appHasRoute(testHostname, testDomain, candidateAppState.Routes) {
-		pl = append(pl, plan.NewCfCommand("unmap-route", candidateAppState.Name, testDomain, "-n", testHostname))
+		pl = append(pl, NewCfCommand("unmap-route", candidateAppState.Name, testDomain, "-n", testHostname))
 	}
 
 	return
 }
 
-func renameOldAppToDelete(currentLiveApp, oldApp, deleteApp plugin_models.GetAppsModel, manifestAppName string) (pl []plan.Command) {
+func renameOldAppToDelete(currentLiveApp, oldApp, deleteApp plugin_models.GetAppsModel, manifestAppName string) (pl []Command) {
 	/*
 	Empty name means the app did not exist
 	I.e for the app with name xyz there is no xyz-OLD and xyz-DELETE
@@ -210,14 +209,14 @@ func renameOldAppToDelete(currentLiveApp, oldApp, deleteApp plugin_models.GetApp
 		return
 	}
 
-	pl = append(pl, plan.NewCfCommand("rename", oldApp.Name, createDeleteName(manifestAppName, 0)))
+	pl = append(pl, NewCfCommand("rename", oldApp.Name, createDeleteName(manifestAppName, 0)))
 	return
 }
 
-func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.GetAppsModel) (pl []plan.Command) {
+func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.GetAppsModel) (pl []Command) {
 	if currentLiveApp.Name == "" && currentOldApp.State == "started" {
 		// See TestWorkerAppWithPreviousPromoteFailure.One previously running deployed version.previous promote failed at step [2]
-		pl = append(pl, plan.NewCfCommand("stop", currentOldApp.Name))
+		pl = append(pl, NewCfCommand("stop", currentOldApp.Name))
 		return
 	}
 
@@ -225,14 +224,14 @@ func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.Get
 		return
 	}
 
-	pl = append(pl, plan.NewCfCommand("rename", currentLiveApp.Name, createOldAppName(currentLiveApp.Name)))
+	pl = append(pl, NewCfCommand("rename", currentLiveApp.Name, createOldAppName(currentLiveApp.Name)))
 
 	if currentLiveApp.State == "started" {
-		pl = append(pl, plan.NewCfCommand("stop", createOldAppName(currentLiveApp.Name)))
+		pl = append(pl, NewCfCommand("stop", createOldAppName(currentLiveApp.Name)))
 	}
 	return
 }
 
-func renameCandidateAppToExpectedName(candidateAppName, expectedName string) plan.Command {
-	return plan.NewCfCommand("rename", candidateAppName, expectedName)
+func renameCandidateAppToExpectedName(candidateAppName, expectedName string) Command {
+	return NewCfCommand("rename", candidateAppName, expectedName)
 }

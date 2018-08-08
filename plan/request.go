@@ -1,4 +1,4 @@
-package plugin
+package plan
 
 type Request struct {
 	Command      string
