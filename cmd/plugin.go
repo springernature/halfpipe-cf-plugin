@@ -71,16 +71,43 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 		Name: "halfpipe",
 		Commands: []cfPlugin.Command{
 			{
-				Name: config.PUSH,
+				Name:         config.PUSH,
+				HelpText:     "Pushes the app with name `my-app` as a `my-app-candidate` and binds a single temporary route to it for testing",
+				UsageDetails: cfPlugin.Usage{
+					Usage:   "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-space DOMAIN]",
+					Options: map[string]string{
+						"-manifestPath": "Relative or absolute path to cf manifest",
+						"-appPath": "Relative or absolute path to the app bits you wish to deploy",
+						"-testDomain": "Domain that will be used when constructing the candidate route for the app",
+						"-space": "Space will be used when constructing the candidate test route",
+					},
+				},
 			},
 			{
 				Name: config.PROMOTE,
+				HelpText: "Promotes the app from `my-app-candidate` to `my-app`, binds all the production routes, removes the test route and stops old instances of the app",
+				UsageDetails: cfPlugin.Usage{
+					Usage:   "cf halfpipe-push [-manifestPath PATH] [-testDomain DOMAIN] [-space DOMAIN]",
+					Options: map[string]string{
+						"-manifestPath": "Relative or absolute path to cf manifest",
+						"-testDomain": "Domain that will be used when constructing the candidate route for the app",
+						"-space": "Space will be used when constructing the candidate test route",
+					},
+				},
 			},
 			{
 				Name: config.DELETE,
+				HelpText: "Deprecated please use halfpipe-cleanup instead!",
 			},
 			{
 				Name: config.CLEANUP,
+				HelpText: "Cleanups all apps that has the -DELETE postfix",
+				UsageDetails: cfPlugin.Usage{
+					Usage:   "cf halfpipe-cleanup [-manifestPath PATH]",
+					Options: map[string]string{
+						"-manifestPath": "Relative or absolute path to cf manifest",
+					},
+				},
 			},
 		},
 	}

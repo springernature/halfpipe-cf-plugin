@@ -10,14 +10,23 @@ This is a CF plugin that does zero downtime deployments.
 
 # Ok, sounds good. So how does it work?
 
-## Plugin
-There are three plugins
+There are three plugins and given a manifest like
 
-### halfpipe-push
+```
+applications:
+- name: app-name
+  memory: 50MB
+  instances: 1
+  routes:
+  - route: route1.domain.com
+  - route: fullDomain.com
+```
 
-This simply deploys the application as `app-name-CANDIDATE` to a test route
+## halfpipe-push
 
-### halfpipe-promote
+This simply deploys the application as `app-name-CANDIDATE` to a test route `app-name-{SPACE}-CANDIDATE.{DOMAIN}`
+
+## halfpipe-promote
 
 * This binds all the routes from the manifest to the `app-name-CANDIDATE`
 * Removes the test route from `app-name-CANDIDATE`
@@ -26,100 +35,129 @@ This simply deploys the application as `app-name-CANDIDATE` to a test route
 * renames `app-name-CANDIDATE` to `app-name`
 * stops `app-name-OLD`
 
-### halfpipe-delete
+## halfpipe-cleanup
 
-Simply deletes `app-name-DELETE`
+Simply deletes the app `app-name-DELETE`
 
-## Concourse resource
-
-```
-resource_types:
-- name: cf-resource
-  type: docker-image
-  source:
-    repository: platformengineering/cf-resource
-    tag: stable
-
-- name: cf-resource
-  type: cf-resource
-  source:
-    api: ((cloudfoundry.api-dev))
-    org: my-org
-    password: ((cloudfoundry.password))
-    space: my-space
-    username: ((cloudfoundry.username))
-    
-jobs:
-- name: deploy-to-dev
-  plan:
-    - get: git
-    - put: cf halfpipe-push
-      resource: cf-resource
-      params:
-        appPath: git/target/distribution/artifact.zip
-        command: halfpipe-push
-        manifestPath: git/manifest.yml
-        testDomain: some.random.domain.com
-    - put: cf halfpipe-promote
-      resource: cf-resource
-      params:
-        command: halfpipe-promote
-        manifestPath: git/manifest.yml
-        testDomain: some.random.domain.com
-    - put: cf halfpipe-delete
-      resource: cf-resource
-      params:
-        command: halfpipe-delete
-        manifestPath: git/manifest.yml
-```
-
-# Cewl, how do I install the plugin?
-
-```
-$ go build go build cmd/plugin/plugin.go
-$ cf install-plugin plugin
-```
+# Ok, so a lot of talk about routes. What if I have a worker app?
+Just put `no-route: true` in the manifest!
 
 # Sample output
+
+Given a manifest like 
+
 ```
-$ cf halfpipe-push -manifestPath manifest-dev.yml -appPath . -testDomain dev.cf.com -space dev
-# CF plugin built from git revision '6ea00c8b3dc7c8251e259821a8fdd72916547462'
+$ cf halfpipe-push -manifestPath path/to/manifest-dev.yml -appPath path/to/app -testDomain dev.cf.com -space dev
+# CF plugin built from git revision '73a073793cd3bbce60428423a53e7544685dfce3'
 # Planned execution
-#	* cf push halfpipe-example-nodejs-CANDIDATE -f manifest-dev.yml -p . -n halfpipe-example-nodejs-dev-CANDIDATE -d cf.dev.com
+#	* cf push my-app-CANDIDATE -f path/to/manifest-dev.yml -p path/to/app --no-route --no-start
+#	* cf map-route my-app-CANDIDATE dev.cf.com -n my-app-dev-CANDIDATE
+#	* cf start my-app-CANDIDATE
 
-$ cf push halfpipe-example-nodejs-CANDIDATE -f manifest-dev.yml -p . -n halfpipe-example-nodejs-dev-CANDIDATE -d cf.dev.com
-Using manifest file manifest-dev.yml
+$ cf push my-app-CANDIDATE -f path/to/manifest-dev.yml -p path/to/app --no-route --no-start
+Using manifest file path/to/manifest-dev.yml
 
-Creating app halfpipe-example-nodejs-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+Creating app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
 OK
-..
-..
 
-$ cf halfpipe-promote -manifestPath manifest-dev.yml -testDomain dev.cf.com -space dev
-# CF plugin built from git revision '6ea00c8b3dc7c8251e259821a8fdd72916547462'
+App my-app-CANDIDATE is a worker, skipping route creation
+Uploading my-app-CANDIDATE...
+Uploading app files from: /tmp/build/put/git/nodejs
+Uploading 7.7K, 11 files
+Done uploading               
+OK
+
+$ cf map-route my-app-CANDIDATE dev.cf.com -n my-app-dev-CANDIDATE
+Creating route my-app-dev-CANDIDATE.dev.cf.com for org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+Adding route my-app-dev-CANDIDATE.dev.cf.com to app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+
+$ cf start my-app-CANDIDATE
+Starting app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+Creating container
+Downloading app package...
+Downloaded app package (7.5K)
+Successfully created container
+....
+App started
+
+
+OK
+
+App my-app-CANDIDATE was started using this command `node app.js`
+
+Showing health and status for app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+
+requested state: started
+instances: 1/1
+usage: 50M x 1 instances
+urls: my-app-dev-CANDIDATE.dev.cf.com
+last uploaded: Wed Aug 8 13:15:47 UTC 2018
+stack: cflinuxfs2
+buildpack: https://github.com/cloudfoundry/nodejs-buildpack#v1.6.17
+
+     state     since                    cpu    memory     disk      details
+#0   running   2018-08-08 01:16:24 PM   0.0%   0 of 50M   0 of 1G
+
+```
+
+```
+$ cf halfpipe-promote -manifestPath path/to/manifest-dev.yml -testDomain dev.cf.com -space dev
+# CF plugin built from git revision '73a073793cd3bbce60428423a53e7544685dfce3'
 # Planned execution
-#	* cf map-route halfpipe-example-nodejs-CANDIDATE dev.private.springernature.io -n halfpipe-example-nodejs
-#	* cf unmap-route halfpipe-example-nodejs-CANDIDATE cf.dev.com -n halfpipe-example-nodejs-dev-CANDIDATE
-#	* cf rename halfpipe-example-nodejs-OLD halfpipe-example-nodejs-DELETE
-#	* cf rename halfpipe-example-nodejs halfpipe-example-nodejs-OLD
-#	* cf stop halfpipe-example-nodejs-OLD
-#	* cf rename halfpipe-example-nodejs-CANDIDATE halfpipe-example-nodejs
+#	* cf map-route my-app-CANDIDATE dev.cf.com -n my-app
+#	* cf map-route my-app-CANDIDATE dev.cf.com -n some-other-host --path nodejs
+#	* cf unmap-route my-app-CANDIDATE dev.cf.com -n my-app-dev-CANDIDATE
+#	* cf rename my-app-OLD my-app-DELETE
+#	* cf rename my-app my-app-OLD
+#	* cf stop my-app-OLD
+#	* cf rename my-app-CANDIDATE my-app
 
-$ cf map-route halfpipe-example-nodejs-CANDIDATE dev.private.springernature.io -n halfpipe-example-nodejs
-Creating route halfpipe-example-nodejs.dev.private.springernature.io for org engineering-enablement / space dev as engineering-enablement@springernature.com...
+$ cf map-route my-app-CANDIDATE dev.cf.com -n my-app
+Creating route my-app.dev.cf.com for org engineering-enablement / space dev as engineering-enablement@springernature.com...
 OK
-Route halfpipe-example-nodejs.dev.private.springernature.io already exists
-Adding route halfpipe-example-nodejs.dev.private.springernature.io to app halfpipe-example-nodejs-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+Adding route my-app.dev.cf.com to app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
 OK
-...
-...
 
-$ cf halfpipe-cleanup -manifestPath manifest-dev.yml
-# CF plugin built from git revision '6ea00c8b3dc7c8251e259821a8fdd72916547462'
-# Planned execution
-#	* cf delete halfpipe-example-nodejs-DELETE -f
+$ cf map-route my-app-CANDIDATE dev.cf.com -n some-other-host --path nodejs
+Creating route some-other-host.dev.cf.com/nodejs for org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+Adding route some-other-host.dev.cf.com/nodejs to app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
 
-$ cf delete halfpipe-example-nodejs-DELETE -f
-Deleting app halfpipe-example-nodejs-DELETE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+$ cf unmap-route my-app-CANDIDATE dev.cf.com -n my-app-dev-CANDIDATE
+Removing route my-app-dev-CANDIDATE.dev.cf.com from app my-app-CANDIDATE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+
+$ cf rename my-app-OLD my-app-DELETE
+Renaming app my-app-OLD to my-app-DELETE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+
+$ cf rename my-app my-app-OLD
+Renaming app my-app to my-app-OLD in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+
+$ cf stop my-app-OLD
+Stopping app my-app-OLD in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+
+$ cf rename my-app-CANDIDATE my-app
+Renaming app my-app-CANDIDATE to my-app in org engineering-enablement / space dev as engineering-enablement@springernature.com...
 OK
 ```
+
+```
+$ cf halfpipe-cleanup -manifestPath path/to/manifest-dev.yml
+# CF plugin built from git revision '73a073793cd3bbce60428423a53e7544685dfce3'
+# Planned execution
+#	* cf delete my-app-DELETE -f
+
+$ cf delete my-app-DELETE -f
+Deleting app my-app-DELETE in org engineering-enablement / space dev as engineering-enablement@springernature.com...
+OK
+```
+
+
+
