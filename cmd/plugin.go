@@ -45,7 +45,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		TestDomain:   testDomain,
 		Space:        space,
 	}
-	
+
 	planner := plan.NewPlanner(
 		plan.NewPushPlanner(cliConnection),
 		plan.NewPromotePlanner(cliConnection),
