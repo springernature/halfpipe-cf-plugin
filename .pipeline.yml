@@ -64,14 +64,12 @@ jobs:
 
           echo
           echo Building plugin for all platforms
-          LDFLAGS=${-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref` -X github.com/springernature/halfpipe-cf-plugin/config.VERSION=`cat $CONCOURSE_ROOT/version/version`}
-          CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin go build -ldflags "$LDFLAGS" -o $ARTIFACTS/halfpipe_cf_plugin_darwin cmd/plugin.go
-          CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "$LDFLAGS" -o $ARTIFACTS/halfpipe_cf_plugin_linux cmd/plugin.go
-          CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -ldflags "$LDFLAGS" -o $ARTIFACTS/halfpipe_cf_plugin_windows.exe cmd/plugin.go
+          CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_darwin cmd/plugin.go
+          CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_linux cmd/plugin.go
+          CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_windows.exe cmd/plugin.go
       inputs:
       - name: git
         path: src/github.com/springernature/halfpipe-cf-plugin/
-      - name: version
       outputs:
       - name: artifacts
   - put: version
