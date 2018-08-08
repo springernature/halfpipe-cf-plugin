@@ -86,7 +86,7 @@ func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
 }
 
 func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
-	expectedError := errors.New("Mehp")
+	expectedError := errors.New("mehp")
 
 	promote := NewPromotePlanner(newMockAppsGetter().
 		WithApp(plugin_models.GetAppModel{
@@ -107,15 +107,15 @@ func TestWorkerApp(t *testing.T) {
 			State: "started",
 		}))
 
-		manifest := manifest.Application{
+		man := manifest.Application{
 			Name:    "myApp",
 			NoRoute: true,
 		}
 		expectedPlan := Plan{
-			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(manifest, Request{})
+		plan, err := promote.GetPlan(man, Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -133,16 +133,16 @@ func TestWorkerApp(t *testing.T) {
 			},
 		}))
 
-		manifest := manifest.Application{
+		man := manifest.Application{
 			Name:    "myApp",
 			NoRoute: true,
 		}
 		expectedPlan := Plan{
-			NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(manifest, Request{})
+		plan, err := promote.GetPlan(man, Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -160,17 +160,17 @@ func TestWorkerApp(t *testing.T) {
 			},
 		}))
 
-		manifest := manifest.Application{
+		man := manifest.Application{
 			Name:    "myApp",
 			NoRoute: true,
 		}
 		expectedPlan := Plan{
-			NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-			NewCfCommand("stop", createOldAppName(manifest.Name)),
-			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
+			NewCfCommand("stop", createOldAppName(man.Name)),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(manifest, Request{})
+		plan, err := promote.GetPlan(man, Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -192,18 +192,18 @@ func TestWorkerApp(t *testing.T) {
 			},
 		}))
 
-		manifest := manifest.Application{
+		man := manifest.Application{
 			Name:    "myApp",
 			NoRoute: true,
 		}
 		expectedPlan := Plan{
-			NewCfCommand("rename", createOldAppName(manifest.Name), createDeleteName(manifest.Name, 0)),
-			NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-			NewCfCommand("stop", createOldAppName(manifest.Name)),
-			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			NewCfCommand("rename", createOldAppName(man.Name), createDeleteName(man.Name, 0)),
+			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
+			NewCfCommand("stop", createOldAppName(man.Name)),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(manifest, Request{})
+		plan, err := promote.GetPlan(man, Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -238,7 +238,7 @@ func TestAppWithRoute(t *testing.T) {
 	route4Path := "kehe/keho"
 	route4 := fmt.Sprintf("%s/%s", route4Domain, route4Path)
 
-	manifest := manifest.Application{
+	man := manifest.Application{
 		Name: appName,
 		Routes: []manifest.Route{
 			{Route: route1},
@@ -267,12 +267,12 @@ func TestAppWithRoute(t *testing.T) {
 	}
 
 	t.Run("Errors out if we cannot get domains in org", func(t *testing.T) {
-		expectedError := errors.New("Meeehp")
+		expectedError := errors.New("meeehp")
 		promote := NewPromotePlanner(newMockAppsGetter().
 			WithApp(candidateApp).
 			WithCliError(expectedError))
 
-		_, err := promote.GetPlan(manifest, request)
+		_, err := promote.GetPlan(man, request)
 		assert.Equal(t, expectedError, err)
 	})
 
@@ -293,7 +293,7 @@ func TestAppWithRoute(t *testing.T) {
 			NewCfCommand("rename", createCandidateAppName(appName), appName),
 		}
 
-		plan, err := promote.GetPlan(manifest, request)
+		plan, err := promote.GetPlan(man, request)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -318,7 +318,7 @@ func TestAppWithRoute(t *testing.T) {
 			NewCfCommand("rename", createCandidateAppName(appName), appName),
 		}
 
-		plan, err := promote.GetPlan(manifest, request)
+		plan, err := promote.GetPlan(man, request)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -354,7 +354,7 @@ func TestAppWithRoute(t *testing.T) {
 			NewCfCommand("rename", createCandidateAppName(appName), appName),
 		}
 
-		plan, err := promote.GetPlan(manifest, request)
+		plan, err := promote.GetPlan(man, request)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -389,7 +389,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 	route4Path := "kehe/keho"
 	route4 := fmt.Sprintf("%s/%s", route4Domain, route4Path)
 
-	manifest := manifest.Application{
+	man := manifest.Application{
 		Name: appName,
 		Routes: []manifest.Route{
 			{Route: route1},
@@ -469,7 +469,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				NewCfCommand("rename", createCandidateAppName(appName), appName),
 			}
 
-			plan, err := promote.GetPlan(manifest, request)
+			plan, err := promote.GetPlan(man, request)
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -521,7 +521,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				NewCfCommand("rename", createCandidateAppName(appName), appName),
 			}
 
-			plan, err := promote.GetPlan(manifest, request)
+			plan, err := promote.GetPlan(man, request)
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -566,7 +566,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				NewCfCommand("rename", createCandidateAppName(appName), appName),
 			}
 
-			plan, err := promote.GetPlan(manifest, request)
+			plan, err := promote.GetPlan(man, request)
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -597,15 +597,15 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 			{Name: "myApp-CANDIDATE", State: "started"},
 		}))
 
-		manifest := manifest.Application{
+		man := manifest.Application{
 			Name:    "myApp",
 			NoRoute: true,
 		}
 		expectedPlan := Plan{
-			NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(manifest, Request{})
+		plan, err := promote.GetPlan(man, Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -629,16 +629,16 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				{Name: "myApp-OLD", State: "started"},
 			}))
 
-			manifest := manifest.Application{
+			man := manifest.Application{
 				Name:    "myApp",
 				NoRoute: true,
 			}
 			expectedPlan := Plan{
-				NewCfCommand("stop", createOldAppName(manifest.Name)),
-				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+				NewCfCommand("stop", createOldAppName(man.Name)),
+				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(manifest, Request{})
+			plan, err := promote.GetPlan(man, Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -654,15 +654,15 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				{Name: "myApp-OLD", State: "stopped"},
 			}))
 
-			manifest := manifest.Application{
+			man := manifest.Application{
 				Name:    "myApp",
 				NoRoute: true,
 			}
 			expectedPlan := Plan{
-				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(manifest, Request{})
+			plan, err := promote.GetPlan(man, Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -690,17 +690,17 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				{Name: "myApp", State: "started"},
 			}))
 
-			manifest := manifest.Application{
+			man := manifest.Application{
 				Name:    "myApp",
 				NoRoute: true,
 			}
 			expectedPlan := Plan{
-				NewCfCommand("rename", manifest.Name, createOldAppName(manifest.Name)),
-				NewCfCommand("stop", createOldAppName(manifest.Name)),
-				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+				NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
+				NewCfCommand("stop", createOldAppName(man.Name)),
+				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(manifest, Request{})
+			plan, err := promote.GetPlan(man, Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -717,16 +717,16 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				{Name: "myApp-OLD", State: "started"},
 			}))
 
-			manifest := manifest.Application{
+			man := manifest.Application{
 				Name:    "myApp",
 				NoRoute: true,
 			}
 			expectedPlan := Plan{
-				NewCfCommand("stop", createOldAppName(manifest.Name)),
-				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+				NewCfCommand("stop", createOldAppName(man.Name)),
+				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(manifest, Request{})
+			plan, err := promote.GetPlan(man, Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -743,15 +743,15 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				{Name: "myApp-OLD", State: "stopped"},
 			}))
 
-			manifest := manifest.Application{
+			man := manifest.Application{
 				Name:    "myApp",
 				NoRoute: true,
 			}
 			expectedPlan := Plan{
-				NewCfCommand("rename", createCandidateAppName(manifest.Name), manifest.Name),
+				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(manifest, Request{})
+			plan, err := promote.GetPlan(man, Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})

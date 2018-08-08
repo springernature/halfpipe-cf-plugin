@@ -18,7 +18,7 @@ var (
 	}
 )
 
-func checkCFState(appName string, testDomain string, candidateRoute string, appsGetter AppsGetter) error {
+func checkCFState(appName string, appsGetter AppsGetter) error {
 	apps, e := appsGetter.GetApps()
 
 	deleteAppName := createDeleteName(appName, 0)

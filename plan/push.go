@@ -18,7 +18,7 @@ func (p push) GetPlan(application manifest.Application, request Request) (pl Pla
 	candidateName := createCandidateAppName(application.Name)
 	candidateHost := createCandidateHostname(application.Name, request.Space)
 
-	stateError := checkCFState(application.Name, request.TestDomain, candidateHost, p.appsGetter)
+	stateError := checkCFState(application.Name, p.appsGetter)
 	if stateError != nil {
 		err = stateError
 		return

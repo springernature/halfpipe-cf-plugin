@@ -35,7 +35,7 @@ func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 }
 
 func TestEmptyPlanIfNoOldApp(t *testing.T) {
-	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{}, errors.New("App my-app-DELETE not found")))
+	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{}, errors.New("app my-app-DELETE not found")))
 
 	plan, err := del.GetPlan(manifest.Application{
 		Name: "my-app",

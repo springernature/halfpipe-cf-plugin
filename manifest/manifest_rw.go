@@ -5,7 +5,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type ManifestReaderWriter interface {
+type ReaderWriter interface {
 	ReadManifest(path string) (Manifest, error)
 	WriteManifest(path string, application Application) (error)
 }
@@ -14,7 +14,7 @@ type manifestReadWrite struct {
 	fs afero.Afero
 }
 
-func NewManifestReadWrite(fs afero.Afero) ManifestReaderWriter {
+func NewManifestReadWrite(fs afero.Afero) ReaderWriter {
 	return manifestReadWrite{
 		fs: fs,
 	}

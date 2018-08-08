@@ -13,7 +13,7 @@ var ErrUnknownCommand = func(cmd string) error {
 	return fmt.Errorf("unknown command '%s'", cmd)
 }
 
-var ErrBadManifest = errors.New("Application manifest must contain exactly one application")
+var ErrBadManifest = errors.New("application manifest must contain exactly one application")
 
 type Planner interface {
 	GetPlan(application manifest.Application, request Request) (pl Plan, err error)
@@ -27,10 +27,10 @@ type pluginPlan struct {
 	pushPlan             Planner
 	promotePlan          Planner
 	cleanupPlan          Planner
-	manifestReaderWriter manifest.ManifestReaderWriter
+	manifestReaderWriter manifest.ReaderWriter
 }
 
-func NewPlanner(pushPlan Planner, promotePlan Planner, cleanupPlan Planner, manifestReaderWriter manifest.ManifestReaderWriter) PluginPlan {
+func NewPlanner(pushPlan Planner, promotePlan Planner, cleanupPlan Planner, manifestReaderWriter manifest.ReaderWriter) PluginPlan {
 	return pluginPlan{
 		pushPlan:             pushPlan,
 		promotePlan:          promotePlan,
