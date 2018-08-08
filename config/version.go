@@ -1,4 +1,4 @@
 package config
 
 // This gets populated when we build the plugin.
-var SHA = "DEV"
+var VERSION = "0.0.0"
