@@ -58,7 +58,7 @@ jobs:
           wget -qO- ${CF_TAR_URL} | tar xvz -C $TMPDIR > /dev/null
 
           # Compile the plugin
-          go build -o ${PLUGIN_BIN_PATH} cmd/plugin/plugin.go > /dev/null
+          go build -o ${PLUGIN_BIN_PATH} cmd/plugin.go > /dev/null
 
           CF_HOME=${TMPDIR} cf install-plugin ${PLUGIN_BIN_PATH} -f
 
