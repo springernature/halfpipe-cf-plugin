@@ -33,7 +33,7 @@ func (p cleanup) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err er
 	// cliConnection just errors if there is no app.
 	// But it doesnt expose a error type for that case, soooooo, string match!
 	app, err := p.appGetter.GetApp(deleteName)
-	if err != nil && err.Error() == fmt.Sprintf("App %s not found", deleteName) {
+	if err != nil && err.Error() == fmt.Sprintf("app %s not found", deleteName) {
 		delete = false
 		err = nil
 		return
