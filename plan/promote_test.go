@@ -22,12 +22,12 @@ func (m mockAppsGetter) GetApp(appName string) (plugin_models.GetAppModel, error
 	return m.app, m.appError
 }
 
-func (m mockAppsGetter) CliCommandWithoutTerminalOutput(args ...string) ([]string, error) {
-	return m.cliOutput, m.cliError
-}
-
 func (m mockAppsGetter) GetApps() ([]plugin_models.GetAppsModel, error) {
 	return m.apps, m.appsError
+}
+
+func (m mockAppsGetter) CliCommandWithoutTerminalOutput(args ...string) ([]string, error) {
+	return m.cliOutput, m.cliError
 }
 
 func (m mockAppsGetter) WithGetAppsError(error error) mockAppsGetter {
@@ -207,6 +207,91 @@ func TestWorkerApp(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
+
+	t.Run("One previously deployed started version with an stopped old version and a uncleaned up DELETE app", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}).
+			WithApps([]plugin_models.GetAppsModel{
+			{
+				Name:  "myApp",
+				State: "started",
+			},
+			{
+				Name:  "myApp-OLD",
+				State: "stopped",
+			},
+			{
+				Name:  "myApp-DELETE",
+				State: "stopped",
+			},
+		}))
+
+		man := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := Plan{
+			NewCfCommand("rename", createOldAppName(man.Name), createDeleteName(man.Name, 1)),
+			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
+			NewCfCommand("stop", createOldAppName(man.Name)),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		}
+
+		plan, err := promote.GetPlan(man, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
+	t.Run("One previously deployed started version with an stopped old version and a couple of uncleaned DELETE apps", func(t *testing.T) {
+		promote := NewPromotePlanner(newMockAppsGetter().
+			WithApp(plugin_models.GetAppModel{
+			Name:  "myApp-CANDIDATE",
+			State: "started",
+		}).
+			WithApps([]plugin_models.GetAppsModel{
+			{
+				Name:  "myApp",
+				State: "started",
+			},
+			{
+				Name:  "myApp-OLD",
+				State: "stopped",
+			},
+			{
+				Name:  "myApp-DELETE",
+				State: "stopped",
+			},
+			{
+				Name:  "myApp-DELETE-1",
+				State: "stopped",
+			},
+
+			{
+				Name:  "myApp-DELETE-2",
+				State: "stopped",
+			},
+
+		}))
+
+		man := manifest.Application{
+			Name:    "myApp",
+			NoRoute: true,
+		}
+		expectedPlan := Plan{
+			NewCfCommand("rename", createOldAppName(man.Name), createDeleteName(man.Name, 3)),
+			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
+			NewCfCommand("stop", createOldAppName(man.Name)),
+			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		}
+
+		plan, err := promote.GetPlan(man, Request{})
+		assert.Nil(t, err)
+		assert.Equal(t, expectedPlan, plan)
+	})
+
 }
 
 func TestAppWithRoute(t *testing.T) {

@@ -3,28 +3,27 @@ package plan
 import (
 	"fmt"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"strings"
 )
 
 type cleanup struct {
-	appGetter AppGetter
+	appGetter AppsGetter
 }
 
 func (p cleanup) GetPlan(application manifest.Application, request Request) (pl Plan, err error) {
-	deleteName := createDeleteName(application.Name, 0)
 
-	deletableApp, err := p.thereIsAnAppToBeDeleted(deleteName)
+	apps, err := p.appGetter.GetApps()
 	if err != nil {
 		return
 	}
 
-	if deletableApp {
-		command := NewCfCommand(
-			"delete",
-			deleteName,
-			"-f",
-		)
-		pl = append(pl, command)
+	deleteNamePrefix := createDeleteName(application.Name, 0)
+	for _, app := range apps {
+		if strings.HasPrefix(app.Name, deleteNamePrefix) {
+			pl = append(pl, NewCfCommand("delete", app.Name, "-f"))
+		}
 	}
+
 	return
 }
 
@@ -45,7 +44,7 @@ func (p cleanup) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err er
 	return
 }
 
-func NewCleanupPlanner(appGetter AppGetter) Planner {
+func NewCleanupPlanner(appGetter AppsGetter) Planner {
 	return cleanup{
 		appGetter: appGetter,
 	}

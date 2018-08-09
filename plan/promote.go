@@ -30,7 +30,7 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan P
 		return
 	}
 
-	currentLiveApp, currentOldApp, currentDeleteApp, err := p.GetPreviousAppState(manifest.Name)
+	currentLiveApp, currentOldApp, currentDeleteApps, err := p.GetPreviousAppState(manifest.Name)
 	if err != nil {
 		return
 	}
@@ -42,7 +42,7 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan P
 
 	plan = append(plan, addManifestRoutes(candidateAppState, manifest.Routes, domainsInOrg)...)
 	plan = append(plan, removeTestRoute(candidateAppState, manifest.Name, request.TestDomain, request.Space)...)
-	plan = append(plan, renameOldAppToDelete(currentLiveApp, currentOldApp, currentDeleteApp, manifest.Name)...)
+	plan = append(plan, renameOldAppToDelete(currentLiveApp, currentOldApp, currentDeleteApps, manifest.Name)...)
 	plan = append(plan, renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp)...)
 	plan = append(plan, renameCandidateAppToExpectedName(candidateAppState.Name, manifest.Name))
 
@@ -62,11 +62,20 @@ func (p promote) getAndVerifyCandidateAppState(manifestAppName string) (app plug
 	return
 }
 
-func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, currentOld, currentDelete plugin_models.GetAppsModel, err error) {
+func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, currentOld plugin_models.GetAppsModel, currentDeletes []plugin_models.GetAppsModel, err error) {
 	appFinder := func(name string, apps []plugin_models.GetAppsModel) (app plugin_models.GetAppsModel) {
 		for _, app := range apps {
 			if app.Name == name {
 				return app
+			}
+		}
+		return
+	}
+
+	deleteAppFinder := func(name string, apps []plugin_models.GetAppsModel) (deleteApps []plugin_models.GetAppsModel) {
+		for _, app := range apps {
+			if strings.HasPrefix(app.Name, name) {
+				deleteApps = append(deleteApps, app)
 			}
 		}
 		return
@@ -79,7 +88,7 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 
 	currentLive = appFinder(manifestAppName, apps)
 	currentOld = appFinder(createOldAppName(manifestAppName), apps)
-	currentDelete = appFinder(createDeleteName(manifestAppName, 0), apps)
+	currentDeletes = deleteAppFinder(createDeleteName(manifestAppName, 0), apps)
 	return
 }
 
@@ -183,7 +192,7 @@ func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppNam
 	return
 }
 
-func renameOldAppToDelete(currentLiveApp, oldApp, deleteApp plugin_models.GetAppsModel, manifestAppName string) (pl []Command) {
+func renameOldAppToDelete(currentLiveApp, oldApp plugin_models.GetAppsModel, deleteApps []plugin_models.GetAppsModel, manifestAppName string) (pl []Command) {
 	/*
 	Empty name means the app did not exist
 	I.e for the app with name xyz there is no xyz-OLD and xyz-DELETE
@@ -197,19 +206,19 @@ func renameOldAppToDelete(currentLiveApp, oldApp, deleteApp plugin_models.GetApp
 		return
 	}
 
-	if deleteApp.Name == "" && oldApp.Name == "" {
+	if len(deleteApps) == 0 && oldApp.Name == "" {
 		// If there is no old apps with the -DELETE and -OLD postfix.
 		// We rust return
 		return
 	}
 
-	if currentLiveApp.Name != "" && deleteApp.Name != "" && oldApp.Name == "" {
+	if currentLiveApp.Name != "" && len(deleteApps) > 0 && oldApp.Name == "" {
 		// $ cf rename appName-OLD appName-DELETE <- Succeeded in a previous run
 		// $ cf rename appName appName-OLD <- Failed in a previous run
 		return
 	}
 
-	pl = append(pl, NewCfCommand("rename", oldApp.Name, createDeleteName(manifestAppName, 0)))
+	pl = append(pl, NewCfCommand("rename", oldApp.Name, createDeleteName(manifestAppName, len(deleteApps))))
 	return
 }
 

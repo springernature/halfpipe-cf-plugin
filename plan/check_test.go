@@ -7,18 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFailsIfDeleteAppNameIsThere(t *testing.T) {
-	appName := "app"
-	deleteAppName := createDeleteName(appName, 0)
-	apps := []plugin_models.GetAppsModel{
-		{Name: deleteAppName},
-	}
-
-	err := checkCFState(appName, newMockAppsGetter().WithApps(apps))
-
-	assert.Equal(t, err, ErrAppNameExists(deleteAppName))
-}
-
 func TestFailsIfOldAppIsRunning(t *testing.T) {
 	appName := "app"
 

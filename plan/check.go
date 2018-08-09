@@ -21,15 +21,10 @@ var (
 func checkCFState(appName string, appsGetter AppsGetter) error {
 	apps, e := appsGetter.GetApps()
 
-	deleteAppName := createDeleteName(appName, 0)
 	oldAppName := createOldAppName(appName)
 
 	if e != nil {
 		return e
-	}
-
-	if appExists(apps, deleteAppName) {
-		return ErrAppNameExists(deleteAppName)
 	}
 
 	if isAppRunning(apps, oldAppName) {
@@ -37,15 +32,6 @@ func checkCFState(appName string, appsGetter AppsGetter) error {
 	}
 
 	return nil
-}
-
-func appExists(apps []plugin_models.GetAppsModel, appName string) bool {
-	for _, app := range apps {
-		if app.Name == appName {
-			return true
-		}
-	}
-	return false
 }
 
 func isAppRunning(apps []plugin_models.GetAppsModel, appName string) bool {

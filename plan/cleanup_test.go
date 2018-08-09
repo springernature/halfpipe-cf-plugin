@@ -4,30 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"code.cloudfoundry.org/cli/plugin/models"
 	"errors"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"code.cloudfoundry.org/cli/plugin/models"
 )
-
-type mockAppGetter struct {
-	app   plugin_models.GetAppModel
-	error error
-}
-
-func (m mockAppGetter) GetApp(appName string) (plugin_models.GetAppModel, error) {
-	return m.app, m.error
-}
-
-func newMockAppGetter(apps plugin_models.GetAppModel, error error) mockAppGetter {
-	return mockAppGetter{
-		app:   apps,
-		error: error,
-	}
-}
 
 func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 	expectedError := errors.New("error")
-	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{}, expectedError))
+	del := NewCleanupPlanner(newMockAppsGetter().WithGetAppsError(expectedError))
 
 	_, err := del.GetPlan(manifest.Application{}, Request{})
 
@@ -35,7 +19,7 @@ func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 }
 
 func TestEmptyPlanIfNoOldApp(t *testing.T) {
-	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{}, errors.New("app my-app-DELETE not found")))
+	del := NewCleanupPlanner(newMockAppsGetter())
 
 	plan, err := del.GetPlan(manifest.Application{
 		Name: "my-app",
@@ -55,11 +39,48 @@ func TestGivesBackADeletePlan(t *testing.T) {
 		NewCfCommand("delete", expectedApplicationName, "-f"),
 	}
 
-	del := NewCleanupPlanner(newMockAppGetter(plugin_models.GetAppModel{Name: "my-app-DELETE"}, nil))
+	del := NewCleanupPlanner(newMockAppsGetter().WithApps(
+		[]plugin_models.GetAppsModel{
+			{
+				Name: createDeleteName(application.Name, 0),
+			},
+		}))
 
 	commands, err := del.GetPlan(application, Request{})
 
 	assert.Nil(t, err)
 	assert.Len(t, commands, 1)
+	assert.Equal(t, expectedPlan, commands)
+}
+
+func TestGivesBackADeletePlanWithMultipleDeleteApps(t *testing.T) {
+	application := manifest.Application{
+		Name: "my-app",
+	}
+	del := NewCleanupPlanner(newMockAppsGetter().WithApps(
+		[]plugin_models.GetAppsModel{
+			{
+				Name: createDeleteName(application.Name, 0),
+			},
+			{
+				Name: application.Name,
+			},
+			{
+				Name: createDeleteName(application.Name, 1),
+			},
+			{
+				Name: createDeleteName("some-other-app", 0),
+			},
+		}))
+
+	commands, err := del.GetPlan(application, Request{})
+
+	expectedPlan := Plan{
+		NewCfCommand("delete", createDeleteName(application.Name, 0), "-f"),
+		NewCfCommand("delete", createDeleteName(application.Name, 1), "-f"),
+	}
+
+	assert.Nil(t, err)
+	assert.Len(t, commands, 2)
 	assert.Equal(t, expectedPlan, commands)
 }
