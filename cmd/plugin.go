@@ -50,6 +50,11 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		Timeout:      timeout,
 	}
 
+	if err := pluginRequest.Verify(); err != nil {
+		logger.Println(err)
+		syscall.Exit(1)
+	}
+
 	planner := plan.NewPlanner(
 		plan.NewPushPlanner(cliConnection),
 		plan.NewPromotePlanner(cliConnection),
