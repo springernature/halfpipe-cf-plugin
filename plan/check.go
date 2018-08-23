@@ -18,8 +18,8 @@ var (
 	}
 )
 
-func checkCFState(appName string, appsGetter CliInterface) error {
-	apps, e := appsGetter.GetApps()
+func checkCFState(appName string, cliConnection CliInterface) error {
+	apps, e := cliConnection.GetApps()
 
 	oldAppName := createOldAppName(appName)
 

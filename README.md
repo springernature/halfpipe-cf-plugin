@@ -47,7 +47,7 @@ Just put `no-route: true` in the manifest!
 Given a manifest like 
 
 ```
-$ cf halfpipe-push -manifestPath path/to/manifest-dev.yml -appPath path/to/app -testDomain dev.cf.com -space dev
+$ cf halfpipe-push -manifestPath path/to/manifest-dev.yml -appPath path/to/app -testDomain dev.cf.com
 # CF plugin built from git revision '73a073793cd3bbce60428423a53e7544685dfce3'
 # Planned execution
 #	* cf push my-app-CANDIDATE -f path/to/manifest-dev.yml -p path/to/app --no-route --no-start
@@ -104,7 +104,7 @@ buildpack: https://github.com/cloudfoundry/nodejs-buildpack#v1.6.17
 ```
 
 ```
-$ cf halfpipe-promote -manifestPath path/to/manifest-dev.yml -testDomain dev.cf.com -space dev
+$ cf halfpipe-promote -manifestPath path/to/manifest-dev.yml -testDomain dev.cf.com
 # CF plugin built from git revision '73a073793cd3bbce60428423a53e7544685dfce3'
 # Planned execution
 #	* cf map-route my-app-CANDIDATE dev.cf.com -n my-app

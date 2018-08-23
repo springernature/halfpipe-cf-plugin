@@ -5,7 +5,17 @@ import (
 
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/stretchr/testify/assert"
+	"code.cloudfoundry.org/cli/cf/errors"
 )
+
+func TestErrorsOutIfGetCurrentSpaceFails(t *testing.T) {
+	expectedError := errors.New("Wryyyy")
+
+	push := NewPushPlanner(newMockCliConnection().WithSpaceError(expectedError))
+
+	_, err := push.GetPlan(manifest.Application{}, Request{})
+	assert.Equal(t, expectedError, err)
+}
 
 func TestGivesBackAPushPlan(t *testing.T) {
 	manifestPath := "path/to/manifest.yml"
@@ -27,13 +37,12 @@ func TestGivesBackAPushPlan(t *testing.T) {
 		NewCfCommand("start", expectedApplicationName),
 	}
 
-	push := NewPushPlanner(newMockCliConnection())
+	push := NewPushPlanner(newMockCliConnection().WithSpace(space))
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
 		AppPath:      appPath,
 		TestDomain:   testDomain,
-		Space:        space,
 	})
 
 	assert.Nil(t, err)

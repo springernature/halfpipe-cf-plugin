@@ -16,7 +16,6 @@ type Request struct {
 	ManifestPath string
 	AppPath      string
 	TestDomain   string
-	Space        string
 	Timeout      time.Duration
 }
 
@@ -36,18 +35,12 @@ func (r Request) Verify() (err error) {
 		if r.TestDomain == "" {
 			return returnErr("testDomain")
 		}
-		if r.Space == "" {
-			return returnErr("space")
-		}
 	case config.PROMOTE:
 		if r.ManifestPath == "" {
 			return returnErr("manifestPath")
 		}
 		if r.TestDomain == "" {
 			return returnErr("testDomain")
-		}
-		if r.Space == "" {
-			return returnErr("space")
 		}
 	case config.CLEANUP, config.DELETE:
 		if r.ManifestPath == "" {

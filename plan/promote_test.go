@@ -9,6 +9,16 @@ import (
 	"fmt"
 )
 
+func TestReturnsErrorIfGetCurrentSpaceFails(t *testing.T) {
+	expectedError := errors.New("error")
+	promote := NewPromotePlanner(newMockCliConnection().WithSpaceError(expectedError))
+
+	_, err := promote.GetPlan(manifest.Application{}, Request{})
+
+	assert.Equal(t, expectedError, err)
+}
+
+
 func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
 	expectedError := errors.New("error")
 	promote := NewPromotePlanner(newMockCliConnection().WithGetAppError(expectedError))
@@ -241,8 +251,9 @@ func TestWorkerApp(t *testing.T) {
 func TestAppWithRoute(t *testing.T) {
 	appName := "myApp"
 	testDomain := "test.com"
-	appCandidateHostname := "myApp-dev-CANDIDATE"
 	space := "dev"
+	appCandidateHostname := fmt.Sprintf("myApp-%s-CANDIDATE", space)
+
 
 	cfDomains := []string{
 		"Getting domains in org myOrg as myUser...",
@@ -292,7 +303,6 @@ func TestAppWithRoute(t *testing.T) {
 
 	request := Request{
 		TestDomain: testDomain,
-		Space:      space,
 	}
 
 	t.Run("Errors out if we cannot get domains in org", func(t *testing.T) {
@@ -307,6 +317,7 @@ func TestAppWithRoute(t *testing.T) {
 
 	t.Run("No previously deployed version", func(t *testing.T) {
 		promote := NewPromotePlanner(newMockCliConnection().
+			WithSpace(space).
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
@@ -329,6 +340,7 @@ func TestAppWithRoute(t *testing.T) {
 
 	t.Run("One previously deployed started live version", func(t *testing.T) {
 		promote := NewPromotePlanner(newMockCliConnection().
+			WithSpace(space).
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
@@ -354,6 +366,7 @@ func TestAppWithRoute(t *testing.T) {
 
 	t.Run("One previously deployed started live version and a stopped older version", func(t *testing.T) {
 		promote := NewPromotePlanner(newMockCliConnection().
+			WithSpace(space).
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
@@ -392,8 +405,8 @@ func TestAppWithRoute(t *testing.T) {
 func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 	appName := "myApp"
 	testDomain := "test.com"
-	appCandidateHostname := "myApp-dev-CANDIDATE"
 	space := "dev"
+	appCandidateHostname := fmt.Sprintf("myApp-%s-CANDIDATE", space)
 
 	cfDomains := []string{
 		"Getting domains in org myOrg as myUser...",
@@ -443,7 +456,6 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 
 	request := Request{
 		TestDomain: testDomain,
-		Space:      space,
 	}
 
 	t.Run("No previously deployed version", func(t *testing.T) {
@@ -486,6 +498,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 			}
 
 			promote := NewPromotePlanner(newMockCliConnection().
+				WithSpace(space).
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
@@ -539,6 +552,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 			}
 
 			promote := NewPromotePlanner(newMockCliConnection().
+				WithSpace(space).
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{

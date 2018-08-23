@@ -7,7 +7,6 @@ import (
 
 type ReaderWriter interface {
 	ReadManifest(path string) (Manifest, error)
-	WriteManifest(path string, application Application) (error)
 }
 
 type manifestReadWrite struct {
@@ -28,19 +27,4 @@ func (m manifestReadWrite) ReadManifest(path string) (man Manifest, err error) {
 
 	err = yaml.Unmarshal(manifestBytes, &man)
 	return
-}
-
-func (m manifestReadWrite) WriteManifest(path string, application Application) (err error) {
-	manifest := Manifest{
-		Applications: []Application{
-			application,
-		},
-	}
-
-	out, err := yaml.Marshal(manifest)
-	if err != nil {
-		return
-	}
-
-	return m.fs.WriteFile(path, out, 0666)
 }

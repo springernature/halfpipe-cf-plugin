@@ -3,13 +3,13 @@ package plan
 import "code.cloudfoundry.org/cli/plugin/models"
 
 type mockCliConnection struct {
-	apps      []plugin_models.GetAppsModel
-	appsError error
-	app       plugin_models.GetAppModel
-	appError  error
-	cliError  error
-	cliOutput []string
-	space plugin_models.Space
+	apps       []plugin_models.GetAppsModel
+	appsError  error
+	app        plugin_models.GetAppModel
+	appError   error
+	cliError   error
+	cliOutput  []string
+	space      plugin_models.Space
 	spaceError error
 }
 
@@ -28,7 +28,6 @@ func (m mockCliConnection) CliCommandWithoutTerminalOutput(args ...string) ([]st
 func (m mockCliConnection) GetCurrentSpace() (plugin_models.Space, error) {
 	return m.space, m.spaceError
 }
-
 
 func (m mockCliConnection) WithApps(apps []plugin_models.GetAppsModel) mockCliConnection {
 	m.apps = apps
@@ -55,14 +54,18 @@ func (m mockCliConnection) WithCliOutput(cliOutput []string) mockCliConnection {
 	return m
 }
 
-
 func (m mockCliConnection) WithCliError(error error) mockCliConnection {
 	m.cliError = error
 	return m
 }
 
-func (m mockCliConnection) WithSpace(space plugin_models.Space) mockCliConnection {
-	m.space = space
+func (m mockCliConnection) WithSpace(space string) mockCliConnection {
+	m.space = plugin_models.Space{
+		SpaceFields: plugin_models.SpaceFields{
+			Guid: "wakawaka",
+			Name: space,
+		},
+	}
 	return m
 }
 
@@ -70,7 +73,6 @@ func (m mockCliConnection) WithSpaceError(err error) mockCliConnection {
 	m.spaceError = err
 	return m
 }
-
 
 func newMockCliConnection() mockCliConnection {
 	return mockCliConnection{

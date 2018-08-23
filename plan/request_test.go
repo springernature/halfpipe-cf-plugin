@@ -37,18 +37,6 @@ func TestRequest(t *testing.T) {
 			assert.Equal(t, expectedError, r.Verify())
 		})
 
-		t.Run("Missing space", func(t *testing.T) {
-			r := Request{
-				Command:      "halfpipe-push",
-				ManifestPath: "path",
-				AppPath:      "path",
-				TestDomain:   "domain.com",
-			}
-			expectedError := ErrMissingArg(r.Command, "space")
-
-			assert.Equal(t, expectedError, r.Verify())
-		})
-
 	})
 
 	t.Run("halfpipe-promote", func(t *testing.T) {
@@ -72,17 +60,6 @@ func TestRequest(t *testing.T) {
 			assert.Equal(t, expectedError, r.Verify())
 		})
 
-		t.Run("Missing space", func(t *testing.T) {
-			r := Request{
-				Command:      "halfpipe-promote",
-				ManifestPath: "path",
-				AppPath:      "path",
-				TestDomain:   "domain.com",
-			}
-			expectedError := ErrMissingArg(r.Command, "space")
-
-			assert.Equal(t, expectedError, r.Verify())
-		})
 	})
 
 	t.Run("halfpipe-cleanup", func(t *testing.T) {

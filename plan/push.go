@@ -5,20 +5,26 @@ import (
 )
 
 type push struct {
-	appsGetter CliInterface
+	cliConnection CliInterface
 }
 
-func NewPushPlanner(appsGetter CliInterface) Planner {
+func NewPushPlanner(cliConnection CliInterface) Planner {
 	return push{
-		appsGetter: appsGetter,
+		cliConnection: cliConnection,
 	}
 }
 
 func (p push) GetPlan(application manifest.Application, request Request) (pl Plan, err error) {
-	candidateName := createCandidateAppName(application.Name)
-	candidateHost := createCandidateHostname(application.Name, request.Space)
+	currentSpace, err := p.cliConnection.GetCurrentSpace()
+	if err != nil {
+		return
+	}
 
-	stateError := checkCFState(application.Name, p.appsGetter)
+	candidateName := createCandidateAppName(application.Name)
+
+	candidateHost := createCandidateHostname(application.Name, currentSpace.Name)
+
+	stateError := checkCFState(application.Name, p.cliConnection)
 	if stateError != nil {
 		err = stateError
 		return

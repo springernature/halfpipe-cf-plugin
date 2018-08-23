@@ -11,16 +11,21 @@ import (
 var ErrCandidateNotRunning = errors.New("Canidate app is not running!")
 
 type promote struct {
-	appsGetter CliInterface
+	cliConnection CliInterface
 }
 
-func NewPromotePlanner(appsGetter CliInterface) Planner {
+func NewPromotePlanner(cliConnection CliInterface) Planner {
 	return promote{
-		appsGetter: appsGetter,
+		cliConnection: cliConnection,
 	}
 }
 
 func (p promote) GetPlan(manifest manifest.Application, request Request) (plan Plan, err error) {
+	currentSpace, err := p.cliConnection.GetCurrentSpace()
+	if err != nil {
+		return
+	}
+
 	/*
 		We must fetch the app under deployment with "cf app appName-CANDIDATE" as the call to "cf apps" in
 		p.GetPreviousAppState does not include path information in the routes..
@@ -41,7 +46,7 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan P
 	}
 
 	plan = append(plan, addManifestRoutes(candidateAppState, manifest.Routes, domainsInOrg)...)
-	plan = append(plan, removeTestRoute(candidateAppState, manifest.Name, request.TestDomain, request.Space)...)
+	plan = append(plan, removeTestRoute(candidateAppState, manifest.Name, request.TestDomain, currentSpace.Name)...)
 	plan = append(plan, renameOldAppToDelete(currentLiveApp, currentOldApp, currentDeleteApps, manifest.Name)...)
 	plan = append(plan, renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp)...)
 	plan = append(plan, renameCandidateAppToExpectedName(candidateAppState.Name, manifest.Name))
@@ -50,7 +55,7 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan P
 }
 
 func (p promote) getAndVerifyCandidateAppState(manifestAppName string) (app plugin_models.GetAppModel, err error) {
-	app, err = p.appsGetter.GetApp(createCandidateAppName(manifestAppName))
+	app, err = p.cliConnection.GetApp(createCandidateAppName(manifestAppName))
 	if err != nil {
 		return
 	}
@@ -81,7 +86,7 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 		return
 	}
 
-	apps, err := p.appsGetter.GetApps()
+	apps, err := p.cliConnection.GetApps()
 	if err != nil {
 		return
 	}
@@ -94,7 +99,7 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 
 func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []string, err error) {
 	if !manifest.NoRoute && len(manifest.Routes) > 0 {
-		output, getErr := p.appsGetter.CliCommandWithoutTerminalOutput("domains")
+		output, getErr := p.cliConnection.CliCommandWithoutTerminalOutput("domains")
 		if getErr != nil {
 			err = getErr
 			return

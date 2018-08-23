@@ -16,18 +16,17 @@ import (
 
 type Halfpipe struct{}
 
-func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, space string, timeout time.Duration) {
+func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
 	aP := flagSet.String("appPath", "", "Path to the app")
 	tD := flagSet.String("testDomain", "", "Domain to push the app to during the candidate stage")
-	s := flagSet.String("space", "", "Space which we are currently operating in, this is used to build candidate route")
 	tO := flagSet.Duration("timeout", 5*time.Minute, "Timeout for each command")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
 
-	return *mP, *aP, *tD, *s, *tO
+	return *mP, *aP, *tD, *tO
 }
 
 func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
@@ -39,14 +38,13 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(0)
 	}
 
-	manifestPath, appPath, testDomain, space, timeout := parseArgs(args)
+	manifestPath, appPath, testDomain, timeout := parseArgs(args)
 
 	pluginRequest := plan.Request{
 		Command:      command,
 		ManifestPath: manifestPath,
 		AppPath:      appPath,
 		TestDomain:   testDomain,
-		Space:        space,
 		Timeout:      timeout,
 	}
 
