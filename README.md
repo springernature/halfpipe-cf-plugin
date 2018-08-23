@@ -7,6 +7,7 @@ This is a CF plugin that does zero downtime deployments.
 * First and foremost other plugins kind of hides what is going on under the hood.
  This plugin will always print out an execution plan with normal cf commands before doing its thing.
 * The steps are different commands, thus allowing you to inject smoke tests or any other task you might want to do between each step.
+* Each of the commands are safe to rerun if for some reason it failed the first time, *cough* network issue *cough*
 
 # Ok, sounds good. So how does it work?
 
