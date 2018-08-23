@@ -27,12 +27,13 @@
     "util",
     "util/clissh/ssherror",
     "util/configv3",
+    "util/download",
     "util/manifest",
     "util/ui",
     "version"
   ]
-  revision = "a400097531d46b877badee63790d847655cdf595"
-  version = "v6.37.0"
+  revision = "9048c6b553bb90bdd92d4156d7e6a54b82a45e72"
+  version = "v6.38.0"
 
 [[projects]]
   name = "github.com/SermoDigital/jose"
@@ -44,12 +45,6 @@
   ]
   revision = "f6df55f235c24f236d11dbcf665249a59ac2021f"
   version = "1.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/beorn7/perks"
-  packages = ["quantile"]
-  revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
   name = "github.com/blang/semver"
@@ -104,12 +99,6 @@
   revision = "2d684516a8861da43017284349b7e303e809ac21"
 
 [[projects]]
-  name = "github.com/golang/protobuf"
-  packages = ["proto"]
-  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
-  version = "v1.1.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/lunixbochs/vtclean"
   packages = ["."]
@@ -134,51 +123,10 @@
   revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
 
 [[projects]]
-  name = "github.com/matttproud/golang_protobuf_extensions"
-  packages = ["pbutil"]
-  revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
-  version = "v1.0.1"
-
-[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/prometheus/client_golang"
-  packages = [
-    "prometheus",
-    "prometheus/push"
-  ]
-  revision = "bcbbc08eb2ddff3af83bbf11e7ec13b4fd730b6e"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/prometheus/client_model"
-  packages = ["go"]
-  revision = "5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/prometheus/common"
-  packages = [
-    "expfmt",
-    "internal/bitbucket.org/ww/goautoneg",
-    "model"
-  ]
-  revision = "c7de2306084e37d54b8be01f3541a8464345e9a5"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/prometheus/procfs"
-  packages = [
-    ".",
-    "internal/util",
-    "nfs",
-    "xfs"
-  ]
-  revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -243,6 +191,12 @@
   revision = "cb6730876b985e110843c1842a7a63a63677cf08"
 
 [[projects]]
+  name = "gopkg.in/cheggaaa/pb.v1"
+  packages = ["."]
+  revision = "2af8bbdea9e99e83b3ac400d8f6b6d1b8cbbf338"
+  version = "v1.0.25"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -251,6 +205,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "12593e6f20c331d9005d92d862d1dc4386a4583081b2027fc9e50a4a3fe21cc7"
+  inputs-digest = "debfa1b001311a0ca12c3b09f042b481cb763f95e7f5f1ca7cbaa2c9271eeb4f"
   solver-name = "gps-cdcl"
   solver-version = 1
