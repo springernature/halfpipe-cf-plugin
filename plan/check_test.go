@@ -15,7 +15,7 @@ func TestFailsIfOldAppIsRunning(t *testing.T) {
 		{Name: oldAppName, State: "running"},
 	}
 
-	err := checkCFState(appName, newMockAppsGetter().WithApps(apps))
+	err := checkCFState(appName, newMockCliConnection().WithApps(apps))
 
 	assert.Equal(t, err, ErrAppRunning(oldAppName))
 }

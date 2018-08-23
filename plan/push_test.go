@@ -27,7 +27,7 @@ func TestGivesBackAPushPlan(t *testing.T) {
 		NewCfCommand("start", expectedApplicationName),
 	}
 
-	push := NewPushPlanner(newMockAppsGetter())
+	push := NewPushPlanner(newMockCliConnection())
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,
@@ -55,7 +55,7 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 		NewCfCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath),
 	}
 
-	push := NewPushPlanner(newMockAppsGetter())
+	push := NewPushPlanner(newMockCliConnection())
 
 	commands, err := push.GetPlan(application, Request{
 		ManifestPath: manifestPath,

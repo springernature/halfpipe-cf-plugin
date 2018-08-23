@@ -11,10 +11,10 @@ import (
 var ErrCandidateNotRunning = errors.New("Canidate app is not running!")
 
 type promote struct {
-	appsGetter AppsGetter
+	appsGetter CliInterface
 }
 
-func NewPromotePlanner(appsGetter AppsGetter) Planner {
+func NewPromotePlanner(appsGetter CliInterface) Planner {
 	return promote{
 		appsGetter: appsGetter,
 	}

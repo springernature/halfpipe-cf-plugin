@@ -7,7 +7,7 @@ import (
 )
 
 type cleanup struct {
-	appGetter AppsGetter
+	appGetter CliInterface
 }
 
 func (p cleanup) GetPlan(application manifest.Application, request Request) (pl Plan, err error) {
@@ -44,7 +44,7 @@ func (p cleanup) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err er
 	return
 }
 
-func NewCleanupPlanner(appGetter AppsGetter) Planner {
+func NewCleanupPlanner(appGetter CliInterface) Planner {
 	return cleanup{
 		appGetter: appGetter,
 	}

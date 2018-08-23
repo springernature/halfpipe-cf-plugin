@@ -5,10 +5,10 @@ import (
 )
 
 type push struct {
-	appsGetter AppsGetter
+	appsGetter CliInterface
 }
 
-func NewPushPlanner(appsGetter AppsGetter) Planner {
+func NewPushPlanner(appsGetter CliInterface) Planner {
 	return push{
 		appsGetter: appsGetter,
 	}

@@ -9,65 +9,9 @@ import (
 	"fmt"
 )
 
-type mockAppsGetter struct {
-	apps      []plugin_models.GetAppsModel
-	appsError error
-	app       plugin_models.GetAppModel
-	appError  error
-	cliError  error
-	cliOutput []string
-}
-
-func (m mockAppsGetter) GetApp(appName string) (plugin_models.GetAppModel, error) {
-	return m.app, m.appError
-}
-
-func (m mockAppsGetter) GetApps() ([]plugin_models.GetAppsModel, error) {
-	return m.apps, m.appsError
-}
-
-func (m mockAppsGetter) CliCommandWithoutTerminalOutput(args ...string) ([]string, error) {
-	return m.cliOutput, m.cliError
-}
-
-func (m mockAppsGetter) WithGetAppsError(error error) mockAppsGetter {
-	m.appsError = error
-	return m
-}
-
-func (m mockAppsGetter) WithCliError(error error) mockAppsGetter {
-	m.cliError = error
-	return m
-}
-
-func (m mockAppsGetter) WithApps(apps []plugin_models.GetAppsModel) mockAppsGetter {
-	m.apps = apps
-	return m
-}
-
-func (m mockAppsGetter) WithApp(app plugin_models.GetAppModel) mockAppsGetter {
-	m.app = app
-	return m
-}
-
-func (m mockAppsGetter) WithGetAppError(err error) mockAppsGetter {
-	m.appError = err
-	return m
-}
-
-func (m mockAppsGetter) WithCliOutput(cliOutput []string) mockAppsGetter {
-	m.cliOutput = cliOutput
-	return m
-}
-
-func newMockAppsGetter() mockAppsGetter {
-	return mockAppsGetter{
-	}
-}
-
 func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
 	expectedError := errors.New("error")
-	promote := NewPromotePlanner(newMockAppsGetter().WithGetAppError(expectedError))
+	promote := NewPromotePlanner(newMockCliConnection().WithGetAppError(expectedError))
 
 	_, err := promote.GetPlan(manifest.Application{}, Request{})
 
@@ -75,7 +19,7 @@ func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
 }
 
 func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
-	promote := NewPromotePlanner(newMockAppsGetter().WithApp(plugin_models.GetAppModel{
+	promote := NewPromotePlanner(newMockCliConnection().WithApp(plugin_models.GetAppModel{
 		Name:  "myApp-CANDIDATE",
 		State: "stopped",
 	}))
@@ -88,7 +32,7 @@ func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
 func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
 	expectedError := errors.New("mehp")
 
-	promote := NewPromotePlanner(newMockAppsGetter().
+	promote := NewPromotePlanner(newMockCliConnection().
 		WithApp(plugin_models.GetAppModel{
 		Name:  "myApp-CANDIDATE",
 		State: "started",
@@ -101,7 +45,7 @@ func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
 
 func TestWorkerApp(t *testing.T) {
 	t.Run("No previously deployed version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -121,7 +65,7 @@ func TestWorkerApp(t *testing.T) {
 	})
 
 	t.Run("One previously deployed stopped version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -148,7 +92,7 @@ func TestWorkerApp(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -176,7 +120,7 @@ func TestWorkerApp(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started version with an stopped old version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -209,7 +153,7 @@ func TestWorkerApp(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started version with an stopped old version and a uncleaned up DELETE app", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -246,7 +190,7 @@ func TestWorkerApp(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started version with an stopped old version and a couple of uncleaned DELETE apps", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -353,7 +297,7 @@ func TestAppWithRoute(t *testing.T) {
 
 	t.Run("Errors out if we cannot get domains in org", func(t *testing.T) {
 		expectedError := errors.New("meeehp")
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(candidateApp).
 			WithCliError(expectedError))
 
@@ -362,7 +306,7 @@ func TestAppWithRoute(t *testing.T) {
 	})
 
 	t.Run("No previously deployed version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
@@ -384,7 +328,7 @@ func TestAppWithRoute(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started live version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
@@ -409,7 +353,7 @@ func TestAppWithRoute(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started live version and a stopped older version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
@@ -541,7 +485,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				}, //[3]
 			}
 
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
@@ -594,7 +538,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				}, //[4]
 			}
 
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
@@ -640,7 +584,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 					},
 				}, //[4]
 			}
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
@@ -673,7 +617,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		*/
 
 		//
-		promote := NewPromotePlanner(newMockAppsGetter().
+		promote := NewPromotePlanner(newMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -704,7 +648,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		*/
 
 		t.Run("previous promote failed at step [2]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -729,7 +673,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		})
 
 		t.Run("previous promote failed at step [3]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -764,7 +708,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		*/
 
 		t.Run("previous promote failed at step [2]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -791,7 +735,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		})
 
 		t.Run("previous promote failed at step [3]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -817,7 +761,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		})
 
 		t.Run("previous promote failed at step [4]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockAppsGetter().
+			promote := NewPromotePlanner(newMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",

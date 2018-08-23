@@ -11,7 +11,7 @@ import (
 
 func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 	expectedError := errors.New("error")
-	del := NewCleanupPlanner(newMockAppsGetter().WithGetAppsError(expectedError))
+	del := NewCleanupPlanner(newMockCliConnection().WithGetAppsError(expectedError))
 
 	_, err := del.GetPlan(manifest.Application{}, Request{})
 
@@ -19,7 +19,7 @@ func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 }
 
 func TestEmptyPlanIfNoOldApp(t *testing.T) {
-	del := NewCleanupPlanner(newMockAppsGetter())
+	del := NewCleanupPlanner(newMockCliConnection())
 
 	plan, err := del.GetPlan(manifest.Application{
 		Name: "my-app",
@@ -39,7 +39,7 @@ func TestGivesBackADeletePlan(t *testing.T) {
 		NewCfCommand("delete", expectedApplicationName, "-f"),
 	}
 
-	del := NewCleanupPlanner(newMockAppsGetter().WithApps(
+	del := NewCleanupPlanner(newMockCliConnection().WithApps(
 		[]plugin_models.GetAppsModel{
 			{
 				Name: createDeleteName(application.Name, 0),
@@ -57,7 +57,7 @@ func TestGivesBackADeletePlanWithMultipleDeleteApps(t *testing.T) {
 	application := manifest.Application{
 		Name: "my-app",
 	}
-	del := NewCleanupPlanner(newMockAppsGetter().WithApps(
+	del := NewCleanupPlanner(newMockCliConnection().WithApps(
 		[]plugin_models.GetAppsModel{
 			{
 				Name: createDeleteName(application.Name, 0),

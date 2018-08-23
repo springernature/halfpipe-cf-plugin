@@ -18,7 +18,7 @@ var (
 	}
 )
 
-func checkCFState(appName string, appsGetter AppsGetter) error {
+func checkCFState(appName string, appsGetter CliInterface) error {
 	apps, e := appsGetter.GetApps()
 
 	oldAppName := createOldAppName(appName)

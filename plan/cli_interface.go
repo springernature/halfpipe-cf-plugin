@@ -2,8 +2,9 @@ package plan
 
 import "code.cloudfoundry.org/cli/plugin/models"
 
-type AppsGetter interface {
+type CliInterface interface {
 	GetApps() ([]plugin_models.GetAppsModel, error)
 	GetApp(appName string) (plugin_models.GetAppModel, error)
 	CliCommandWithoutTerminalOutput(args ...string) ([]string, error)
+	GetCurrentSpace() (plugin_models.Space, error)
 }
