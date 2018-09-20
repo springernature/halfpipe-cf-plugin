@@ -1,7 +1,6 @@
 package plan
 
 import (
-	"fmt"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"strings"
 )
@@ -14,6 +13,7 @@ func (p cleanup) GetPlan(application manifest.Application, request Request) (pl 
 
 	apps, err := p.appGetter.GetApps()
 	if err != nil {
+		err = ErrGetApps(err)
 		return
 	}
 
@@ -24,23 +24,6 @@ func (p cleanup) GetPlan(application manifest.Application, request Request) (pl 
 		}
 	}
 
-	return
-}
-
-func (p cleanup) thereIsAnAppToBeDeleted(deleteName string) (delete bool, err error) {
-	// This is messy.
-	// cliConnection just errors if there is no app.
-	// But it doesnt expose a error type for that case, soooooo, string match!
-	app, err := p.appGetter.GetApp(deleteName)
-	if err != nil && err.Error() == fmt.Sprintf("app %s not found", deleteName) {
-		delete = false
-		err = nil
-		return
-	} else if err != nil {
-		return
-	}
-
-	delete = app.Name == deleteName
 	return
 }
 

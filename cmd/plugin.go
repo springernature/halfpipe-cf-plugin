@@ -62,6 +62,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 
 	p, err := planner.GetPlan(pluginRequest)
 	if err != nil {
+		logger.Println("Failed to create execution plan!")
 		logger.Println(err)
 		syscall.Exit(1)
 	}

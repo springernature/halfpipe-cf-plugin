@@ -19,14 +19,12 @@ var (
 )
 
 func checkCFState(appName string, cliConnection CliInterface) error {
-	apps, e := cliConnection.GetApps()
-
-	oldAppName := createOldAppName(appName)
-
-	if e != nil {
-		return e
+	apps, err := cliConnection.GetApps()
+	if err != nil {
+		return ErrGetApps(err)
 	}
 
+	oldAppName := createOldAppName(appName)
 	if isAppRunning(apps, oldAppName) {
 		return ErrAppRunning(oldAppName)
 	}

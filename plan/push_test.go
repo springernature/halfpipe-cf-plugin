@@ -14,7 +14,7 @@ func TestErrorsOutIfGetCurrentSpaceFails(t *testing.T) {
 	push := NewPushPlanner(newMockCliConnection().WithSpaceError(expectedError))
 
 	_, err := push.GetPlan(manifest.Application{}, Request{})
-	assert.Equal(t, expectedError, err)
+	assert.Equal(t, ErrGetCurrentSpace(expectedError), err)
 }
 
 func TestGivesBackAPushPlan(t *testing.T) {

@@ -23,6 +23,7 @@ func NewPromotePlanner(cliConnection CliInterface) Planner {
 func (p promote) GetPlan(manifest manifest.Application, request Request) (plan Plan, err error) {
 	currentSpace, err := p.cliConnection.GetCurrentSpace()
 	if err != nil {
+		err = ErrGetCurrentSpace(err)
 		return
 	}
 
@@ -57,6 +58,7 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan P
 func (p promote) getAndVerifyCandidateAppState(manifestAppName string) (app plugin_models.GetAppModel, err error) {
 	app, err = p.cliConnection.GetApp(createCandidateAppName(manifestAppName))
 	if err != nil {
+		err = ErrGetApp(manifestAppName, err)
 		return
 	}
 
@@ -88,6 +90,7 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 
 	apps, err := p.cliConnection.GetApps()
 	if err != nil {
+		err = ErrGetApps(err)
 		return
 	}
 
@@ -101,7 +104,7 @@ func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []strin
 	if !manifest.NoRoute && len(manifest.Routes) > 0 {
 		output, getErr := p.cliConnection.CliCommandWithoutTerminalOutput("domains")
 		if getErr != nil {
-			err = getErr
+			err = ErrCliCommandWithoutTerminalOutput("cf domains", getErr)
 			return
 		}
 

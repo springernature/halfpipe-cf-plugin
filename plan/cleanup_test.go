@@ -15,7 +15,7 @@ func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 
 	_, err := del.GetPlan(manifest.Application{}, Request{})
 
-	assert.Equal(t, expectedError, err)
+	assert.Equal(t, ErrGetApps(expectedError), err)
 }
 
 func TestEmptyPlanIfNoOldApp(t *testing.T) {

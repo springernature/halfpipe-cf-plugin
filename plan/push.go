@@ -17,6 +17,7 @@ func NewPushPlanner(cliConnection CliInterface) Planner {
 func (p push) GetPlan(application manifest.Application, request Request) (pl Plan, err error) {
 	currentSpace, err := p.cliConnection.GetCurrentSpace()
 	if err != nil {
+		err = ErrGetCurrentSpace(err)
 		return
 	}
 

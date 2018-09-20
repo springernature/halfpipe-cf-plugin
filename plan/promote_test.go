@@ -15,17 +15,18 @@ func TestReturnsErrorIfGetCurrentSpaceFails(t *testing.T) {
 
 	_, err := promote.GetPlan(manifest.Application{}, Request{})
 
-	assert.Equal(t, expectedError, err)
+	assert.Equal(t, ErrGetCurrentSpace(expectedError), err)
 }
 
 
 func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
+	applicationName := "kehe"
 	expectedError := errors.New("error")
 	promote := NewPromotePlanner(newMockCliConnection().WithGetAppError(expectedError))
 
-	_, err := promote.GetPlan(manifest.Application{}, Request{})
+	_, err := promote.GetPlan(manifest.Application{Name: applicationName}, Request{})
 
-	assert.Equal(t, expectedError, err)
+	assert.Equal(t, ErrGetApp(applicationName, expectedError), err)
 }
 
 func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
@@ -50,7 +51,7 @@ func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
 		WithGetAppsError(expectedError))
 
 	_, err := promote.GetPlan(manifest.Application{}, Request{})
-	assert.Equal(t, expectedError, err)
+	assert.Equal(t, ErrGetApps(expectedError), err)
 }
 
 func TestWorkerApp(t *testing.T) {
@@ -312,7 +313,7 @@ func TestAppWithRoute(t *testing.T) {
 			WithCliError(expectedError))
 
 		_, err := promote.GetPlan(man, request)
-		assert.Equal(t, expectedError, err)
+		assert.Equal(t, ErrCliCommandWithoutTerminalOutput("cf domains", expectedError), err)
 	})
 
 	t.Run("No previously deployed version", func(t *testing.T) {
