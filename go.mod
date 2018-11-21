@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/go-runewidth v0.0.3 // indirect
-	github.com/sirupsen/logrus v1.2.0 // indirect
+	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/afero v1.1.2
 	github.com/stretchr/testify v1.2.2
 	github.com/vito/go-interact v0.0.0-20171111012221-fa338ed9e9ec // indirect

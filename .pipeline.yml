@@ -34,16 +34,15 @@ jobs:
         type: docker-image
         source:
           repository: golang
-          tag: 1.10-alpine3.7
+          tag: golang:1.11-stretch
       run:
         path: /bin/sh
         args:
         - -ec
         - |
           export CONCOURSE_ROOT=$PWD
-          export GOPATH=$PWD
           export ARTIFACTS=$PWD/artifacts
-          cd src/github.com/springernature/halfpipe-cf-plugin/
+          cd git
 
           echo go test
           go test -cover ./...
@@ -69,7 +68,6 @@ jobs:
           CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_windows.exe cmd/plugin.go
       inputs:
       - name: git
-        path: src/github.com/springernature/halfpipe-cf-plugin/
       outputs:
       - name: artifacts
   - put: version

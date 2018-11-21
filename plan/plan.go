@@ -1,10 +1,10 @@
 package plan
 
 import (
+	"code.cloudfoundry.org/cli/cf/errors"
 	"fmt"
 	"log"
 	"time"
-	"code.cloudfoundry.org/cli/cf/errors"
 )
 
 func ErrTimeoutCommand(command Command, timeout time.Duration) error {
@@ -32,7 +32,7 @@ func (p Plan) Execute(executor Executor, timeoutInSeconds time.Duration, logger 
 
 		errChan := make(chan error, 1)
 		go func() {
-			_, err = executor.CliCommand(command.Args()...)
+			err = executor.Execute(command)
 			errChan <- err
 		}()
 

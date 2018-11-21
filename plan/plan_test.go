@@ -1,10 +1,9 @@
 package plan
 
 import (
-	"testing"
-
 	"io/ioutil"
 	"log"
+	"testing"
 
 	"code.cloudfoundry.org/cli/cf/errors"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ var DevNullWriter = log.New(ioutil.Discard, "", 0)
 
 type mockExecutor struct {
 	err error
-	f   func(args ...string) ([]string, error)
+	f   func(command Command) error
 }
 
 func newMockExecutorWithError(err error) Executor {
@@ -24,17 +23,17 @@ func newMockExecutorWithError(err error) Executor {
 	}
 }
 
-func newMockExecutorWithFunction(fun func(args ...string) ([]string, error)) Executor {
+func newMockExecutorWithFunction(fun func(command Command) error) Executor {
 	return mockExecutor{
 		f: fun,
 	}
 }
 
-func (m mockExecutor) CliCommand(args ...string) ([]string, error) {
+func (m mockExecutor) Execute(cmd Command) error {
 	if m.f != nil {
-		return m.f(args...)
+		return m.f(cmd)
 	}
-	return []string{}, m.err
+	return m.err
 }
 
 func TestPlan_String(t *testing.T) {
@@ -57,7 +56,7 @@ func TestPlan_ExecutePassesOnError(t *testing.T) {
 		NewCfCommand("error"),
 	}
 
-	err := p.Execute(newMockExecutorWithError(expectedError), 10 * time.Second, DevNullWriter)
+	err := p.Execute(newMockExecutorWithError(expectedError), 10*time.Second, DevNullWriter)
 
 	assert.Equal(t, expectedError, err)
 }
@@ -73,13 +72,13 @@ func TestPlan_ExecutePassesOnErrorIfItHappensInTheMiddleOfThePlan(t *testing.T) 
 		NewCfCommand("ok"),
 	}
 
-	err := p.Execute(newMockExecutorWithFunction(func(args ...string) ([]string, error) {
+	err := p.Execute(newMockExecutorWithFunction(func(command Command) error {
 		numberOfCalls++
-		if args[0] == "error" {
-			return []string{}, expectedError
+		if command.Args()[0] == "error" {
+			return expectedError
 		}
-		return []string{}, nil
-	}), 10 * time.Second, DevNullWriter)
+		return nil
+	}), 10*time.Second, DevNullWriter)
 
 	assert.Equal(t, 3, numberOfCalls)
 	assert.Equal(t, expectedError, err)
@@ -95,10 +94,10 @@ func TestPlan_Execute(t *testing.T) {
 		NewCfCommand("ok"),
 	}
 
-	err := p.Execute(newMockExecutorWithFunction(func(args ...string) ([]string, error) {
+	err := p.Execute(newMockExecutorWithFunction(func(command Command) error {
 		numberOfCalls++
-		return []string{}, nil
-	}), 10 * time.Second, DevNullWriter)
+		return nil
+	}), 10*time.Second, DevNullWriter)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 4, numberOfCalls)
@@ -122,9 +121,9 @@ func (m timeExecutor) withError(err error) timeExecutor {
 	return m
 }
 
-func (m timeExecutor) CliCommand(args ...string) ([]string, error) {
+func (m timeExecutor) Execute(cmd Command) error {
 	time.Sleep(m.sleeptime)
-	return []string{}, m.err
+	return m.err
 }
 
 func TestPlanWithTimeout(t *testing.T) {

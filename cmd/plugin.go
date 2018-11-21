@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	cfPlugin "code.cloudfoundry.org/cli/plugin"
-	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/spf13/afero"
+	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"time"
@@ -68,7 +68,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	logger.Println(p)
-	if err = p.Execute(cliConnection, pluginRequest.Timeout, logger); err != nil {
+	if err = p.Execute(plan.NewShellExecutor(logger), pluginRequest.Timeout, logger); err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
 	}
