@@ -2,6 +2,7 @@ package executor
 
 import (
 	"errors"
+	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +85,7 @@ func TestPlan_ExecutePassesOnErrorIfItHappensInTheMiddleOfThePlan(t *testing.T) 
 		p := plan.Plan{
 			command.NewCfShellCommand("ok"),
 			command.NewCfShellCommand("ok"),
-			command.NewCfCliCommand(),
+			command.NewCfCliCommand(func(cliConnection halfpipe_cf_plugin.CliInterface, logger *log.Logger) error {return nil}),
 			command.NewCfShellCommand("ok"),
 		}
 
@@ -100,9 +101,9 @@ func TestPlan_Execute(t *testing.T) {
 
 	p := plan.Plan{
 		command.NewCfShellCommand("ok"),
-		command.NewCfCliCommand(),
+		command.NewCfCliCommand(func(cliConnection halfpipe_cf_plugin.CliInterface, logger *log.Logger) error {return nil}),
 		command.NewCfShellCommand("ok"),
-		command.NewCfCliCommand(),
+		command.NewCfCliCommand(func(cliConnection halfpipe_cf_plugin.CliInterface, logger *log.Logger) error {return nil}),
 	}
 
 	err := NewExecutor(newMockExecutorWithFunction(func(command command.Command) error {

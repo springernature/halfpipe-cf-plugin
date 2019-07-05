@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
-	"github.com/springernature/halfpipe-cf-plugin/executor"
 	"github.com/springernature/halfpipe-cf-plugin/helpers"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
@@ -16,10 +15,10 @@ import (
 var ErrCandidateNotRunning = errors.New("Canidate app is not running!")
 
 type promote struct {
-	cliConnection executor.CliInterface
+	cliConnection halfpipe_cf_plugin.CliInterface
 }
 
-func NewPromotePlanner(cliConnection executor.CliInterface) plan.Planner {
+func NewPromotePlanner(cliConnection halfpipe_cf_plugin.CliInterface) plan.Planner {
 	return promote{
 		cliConnection: cliConnection,
 	}
@@ -28,7 +27,7 @@ func NewPromotePlanner(cliConnection executor.CliInterface) plan.Planner {
 func (p promote) GetPlan(manifest manifest.Application, request halfpipe_cf_plugin.Request) (plan plan.Plan, err error) {
 	currentSpace, err := p.cliConnection.GetCurrentSpace()
 	if err != nil {
-		err = executor.ErrGetCurrentSpace(err)
+		err = halfpipe_cf_plugin.ErrGetCurrentSpace(err)
 		return
 	}
 
@@ -63,7 +62,7 @@ func (p promote) GetPlan(manifest manifest.Application, request halfpipe_cf_plug
 func (p promote) getAndVerifyCandidateAppState(manifestAppName string) (app plugin_models.GetAppModel, err error) {
 	app, err = p.cliConnection.GetApp(helpers.CreateCandidateAppName(manifestAppName))
 	if err != nil {
-		err = executor.ErrGetApp(manifestAppName, err)
+		err = halfpipe_cf_plugin.ErrGetApp(manifestAppName, err)
 		return
 	}
 
@@ -95,7 +94,7 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 
 	apps, err := p.cliConnection.GetApps()
 	if err != nil {
-		err = executor.ErrGetApps(err)
+		err = halfpipe_cf_plugin.ErrGetApps(err)
 		return
 	}
 
@@ -109,7 +108,7 @@ func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []strin
 	if !manifest.NoRoute && len(manifest.Routes) > 0 {
 		output, getErr := p.cliConnection.CliCommandWithoutTerminalOutput("domains")
 		if getErr != nil {
-			err = executor.ErrCliCommandWithoutTerminalOutput("cf domains", getErr)
+			err = halfpipe_cf_plugin.ErrCliCommandWithoutTerminalOutput("cf domains", getErr)
 			return
 		}
 

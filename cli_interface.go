@@ -1,4 +1,4 @@
-package executor
+package halfpipe_cf_plugin
 
 import "code.cloudfoundry.org/cli/plugin/models"
 

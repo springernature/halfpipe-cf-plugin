@@ -27,6 +27,10 @@ applications:
 
 This simply deploys the application as `app-name-CANDIDATE` to a test route `app-name-{SPACE}-CANDIDATE.{DOMAIN}`
 
+## halfpipe-check
+
+Checks that all instances of the app is up and running, useful to stick between `halfpipe-push` and `halfpipe-promote
+
 ## halfpipe-promote
 
 * This binds all the routes from the manifest to the `app-name-CANDIDATE`

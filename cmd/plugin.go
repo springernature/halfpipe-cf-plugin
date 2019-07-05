@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/check"
 	"github.com/springernature/halfpipe-cf-plugin/cleanup"
 	"github.com/springernature/halfpipe-cf-plugin/executor"
 	"github.com/springernature/halfpipe-cf-plugin/promote"
@@ -60,6 +61,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 
 	planner := plan.NewPlanner(
 		push.NewPushPlanner(cliConnection),
+		check.NewCheckPlanner(10*time.Second),
 		promote.NewPromotePlanner(cliConnection),
 		cleanup.NewCleanupPlanner(cliConnection),
 		manifest.NewManifestReadWrite(afero.Afero{Fs: afero.NewOsFs()}),
@@ -73,7 +75,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	logger.Println(p)
-	if err = executor.NewExecutor(executor.NewShellExecutor(logger), executor.NewShellExecutor(logger), pluginRequest.Timeout, logger).Execute(p); err != nil {
+	if err = executor.NewExecutor(executor.NewShellExecutor(logger), executor.NewCliExecutor(cliConnection, logger), pluginRequest.Timeout, logger).Execute(p); err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
 	}
@@ -94,6 +96,16 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 						"-testDomain":   "Domain that will be used when constructing the candidate route for the app",
 						"-space":        "Space will be used when constructing the candidate test route",
 						"-timeout":      "Timeout for all the sub commands, example 10s, 2m37s",
+					},
+				},
+			},
+			{
+				Name:     config.CHECK,
+				HelpText: "Checks that all instances are in running state",
+				UsageDetails: cfPlugin.Usage{
+					Usage: "cf halfpipe-check [-manifestPath PATH]",
+					Options: map[string]string{
+						"-manifestPath": "Relative or absolute path to cf manifest",
 					},
 				},
 			},

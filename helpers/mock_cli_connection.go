@@ -5,8 +5,7 @@ import "code.cloudfoundry.org/cli/plugin/models"
 type mockCliConnection struct {
 	apps       []plugin_models.GetAppsModel
 	appsError  error
-	app        plugin_models.GetAppModel
-	appError   error
+	appFun     func() (plugin_models.GetAppModel, error)
 	cliError   error
 	cliOutput  []string
 	space      plugin_models.Space
@@ -18,7 +17,7 @@ func (m mockCliConnection) GetApps() ([]plugin_models.GetAppsModel, error) {
 }
 
 func (m mockCliConnection) GetApp(appName string) (plugin_models.GetAppModel, error) {
-	return m.app, m.appError
+	return m.appFun()
 }
 
 func (m mockCliConnection) CliCommandWithoutTerminalOutput(args ...string) ([]string, error) {
@@ -40,12 +39,21 @@ func (m mockCliConnection) WithGetAppsError(error error) mockCliConnection {
 }
 
 func (m mockCliConnection) WithApp(app plugin_models.GetAppModel) mockCliConnection {
-	m.app = app
+	m.appFun = func() (model plugin_models.GetAppModel, e error) {
+		return app, nil
+	}
+	return m
+}
+
+func (m mockCliConnection) WithAppFun(appFun func() (model plugin_models.GetAppModel, e error)) mockCliConnection {
+	m.appFun = appFun
 	return m
 }
 
 func (m mockCliConnection) WithGetAppError(err error) mockCliConnection {
-	m.appError = err
+	m.appFun = func() (model plugin_models.GetAppModel, e error) {
+		return plugin_models.GetAppModel{}, err
+	}
 	return m
 }
 

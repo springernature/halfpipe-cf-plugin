@@ -25,14 +25,16 @@ type PluginPlan interface {
 
 type pluginPlan struct {
 	pushPlan             Planner
+	checkPlan            Planner
 	promotePlan          Planner
 	cleanupPlan          Planner
 	manifestReaderWriter manifest.ReaderWriter
 }
 
-func NewPlanner(pushPlan Planner, promotePlan Planner, cleanupPlan Planner, manifestReaderWriter manifest.ReaderWriter) PluginPlan {
+func NewPlanner(pushPlan Planner, checkPlan Planner, promotePlan Planner, cleanupPlan Planner, manifestReaderWriter manifest.ReaderWriter) PluginPlan {
 	return pluginPlan{
 		pushPlan:             pushPlan,
+		checkPlan:            checkPlan,
 		promotePlan:          promotePlan,
 		cleanupPlan:          cleanupPlan,
 		manifestReaderWriter: manifestReaderWriter,
@@ -54,6 +56,8 @@ func (c pluginPlan) GetPlan(request halfpipe_cf_plugin.Request) (commands Plan, 
 	switch request.Command {
 	case config.PUSH:
 		commands, err = c.pushPlan.GetPlan(app, request)
+	case config.CHECK:
+		commands, err = c.checkPlan.GetPlan(app, request)
 	case config.PROMOTE:
 		commands, err = c.promotePlan.GetPlan(app, request)
 	case config.DELETE, config.CLEANUP:

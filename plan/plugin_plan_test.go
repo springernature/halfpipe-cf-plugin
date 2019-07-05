@@ -54,7 +54,7 @@ func (StubManifestReadWrite) WriteManifest(path string, application manifest.App
 func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 	expectedError := errors.New("blurgh")
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{readError: expectedError})
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{readError: expectedError})
 
 	_, err := controller.GetPlan(halfpipe_cf_plugin.Request{Command: config.PUSH})
 	assert.Equal(t, expectedError, err)
@@ -62,13 +62,13 @@ func TestControllerReturnsErrorIfManifestReaderErrors(t *testing.T) {
 
 func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{manifest:manifest.Manifest{}})
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{manifest:manifest.Manifest{}})
 
 	_, err := controller.GetPlan(halfpipe_cf_plugin.Request{Command: config.PUSH})
 	assert.Equal(t, ErrBadManifest, err)
 
 
-	controller = NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{manifest:manifest.Manifest{Applications: []manifest.Application{{}, {}}}})
+	controller = NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), newMockPlanner(), StubManifestReadWrite{manifest:manifest.Manifest{Applications: []manifest.Application{{}, {}}}})
 	_, err = controller.GetPlan(halfpipe_cf_plugin.Request{Command: config.PROMOTE})
 	assert.Equal(t, ErrBadManifest, err)
 }
@@ -76,7 +76,7 @@ func TestControllerReturnsErrorForBadManifest(t *testing.T) {
 func TestControllerReturnsErrorIfCallingOutToPlanFails(t *testing.T) {
 	expectedErr := errors.New("Meehp")
 
-	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
+	controller := NewPlanner(newMockPlannerWithError(expectedErr), newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
 	_, err := controller.GetPlan(halfpipe_cf_plugin.Request{Command: config.PUSH})
 
 	assert.Equal(t, expectedErr, err)
@@ -86,7 +86,7 @@ func TestControllerReturnsErrorIfUnknownSubCommand(t *testing.T) {
 	command := "not-supported"
 	expectedErr := ErrUnknownCommand(command)
 
-	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
+	controller := NewPlanner(newMockPlanner(), newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
 
 	_, err := controller.GetPlan(halfpipe_cf_plugin.Request{Command: command})
 
@@ -98,7 +98,7 @@ func TestControllerReturnsTheCommandsForTheCommand(t *testing.T) {
 		command.NewCfShellCommand("blurgh"),
 	}
 
-	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
+	controller := NewPlanner(newMockPlannerWithPlan(expectedPlan), newMockPlanner(), newMockPlanner(), newMockPlanner(), manifestWithOneApp)
 
 	commands, err := controller.GetPlan(halfpipe_cf_plugin.Request{Command: config.PUSH})
 

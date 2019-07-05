@@ -3,7 +3,6 @@ package cleanup
 import (
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
-	"github.com/springernature/halfpipe-cf-plugin/executor"
 	"github.com/springernature/halfpipe-cf-plugin/helpers"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"testing"
@@ -20,7 +19,7 @@ func TestGivesBackErrorIfGetAppFails(t *testing.T) {
 
 	_, err := del.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
 
-	assert.Equal(t, executor.ErrGetApps(expectedError), err)
+	assert.Equal(t, halfpipe_cf_plugin.ErrGetApps(expectedError), err)
 }
 
 func TestEmptyPlanIfNoOldApp(t *testing.T) {

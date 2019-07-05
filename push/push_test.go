@@ -3,7 +3,6 @@ package push
 import (
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
-	"github.com/springernature/halfpipe-cf-plugin/executor"
 	"github.com/springernature/halfpipe-cf-plugin/helpers"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"testing"
@@ -19,7 +18,7 @@ func TestErrorsOutIfGetCurrentSpaceFails(t *testing.T) {
 	push := NewPushPlanner(helpers.NewMockCliConnection().WithSpaceError(expectedError))
 
 	_, err := push.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
-	assert.Equal(t, executor.ErrGetCurrentSpace(expectedError), err)
+	assert.Equal(t, halfpipe_cf_plugin.ErrGetCurrentSpace(expectedError), err)
 }
 
 func TestGivesBackAPushPlan(t *testing.T) {

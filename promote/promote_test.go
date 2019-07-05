@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
-	"github.com/springernature/halfpipe-cf-plugin/executor"
 	"github.com/springernature/halfpipe-cf-plugin/helpers"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
@@ -20,7 +19,7 @@ func TestReturnsErrorIfGetCurrentSpaceFails(t *testing.T) {
 
 	_, err := promote.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
 
-	assert.Equal(t, executor.ErrGetCurrentSpace(expectedError), err)
+	assert.Equal(t, halfpipe_cf_plugin.ErrGetCurrentSpace(expectedError), err)
 }
 
 
@@ -31,7 +30,7 @@ func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
 
 	_, err := promote.GetPlan(manifest.Application{Name: applicationName}, halfpipe_cf_plugin.Request{})
 
-	assert.Equal(t, executor.ErrGetApp(applicationName, expectedError), err)
+	assert.Equal(t, halfpipe_cf_plugin.ErrGetApp(applicationName, expectedError), err)
 }
 
 func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
@@ -56,7 +55,7 @@ func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
 		WithGetAppsError(expectedError))
 
 	_, err := promote.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
-	assert.Equal(t, executor.ErrGetApps(expectedError), err)
+	assert.Equal(t, halfpipe_cf_plugin.ErrGetApps(expectedError), err)
 }
 
 func TestWorkerApp(t *testing.T) {
@@ -318,7 +317,7 @@ func TestAppWithRoute(t *testing.T) {
 			WithCliError(expectedError))
 
 		_, err := promote.GetPlan(man, request)
-		assert.Equal(t, executor.ErrCliCommandWithoutTerminalOutput("cf domains", expectedError), err)
+		assert.Equal(t, halfpipe_cf_plugin.ErrCliCommandWithoutTerminalOutput("cf domains", expectedError), err)
 	})
 
 	t.Run("No previously deployed version", func(t *testing.T) {

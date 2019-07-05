@@ -3,17 +3,16 @@ package push
 import (
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
-	"github.com/springernature/halfpipe-cf-plugin/executor"
 	. "github.com/springernature/halfpipe-cf-plugin/helpers"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
 )
 
 type push struct {
-	cliConnection executor.CliInterface
+	cliConnection halfpipe_cf_plugin.CliInterface
 }
 
-func NewPushPlanner(cliConnection executor.CliInterface) plan.Planner {
+func NewPushPlanner(cliConnection halfpipe_cf_plugin.CliInterface) plan.Planner {
 	return push{
 		cliConnection: cliConnection,
 	}
@@ -22,7 +21,7 @@ func NewPushPlanner(cliConnection executor.CliInterface) plan.Planner {
 func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plugin.Request) (pl plan.Plan, err error) {
 	currentSpace, err := p.cliConnection.GetCurrentSpace()
 	if err != nil {
-		err = executor.ErrGetCurrentSpace(err)
+		err = halfpipe_cf_plugin.ErrGetCurrentSpace(err)
 		return
 	}
 

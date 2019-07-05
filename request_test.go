@@ -39,6 +39,17 @@ func TestRequest(t *testing.T) {
 
 	})
 
+	t.Run("halfpipe-check", func(t *testing.T) {
+		t.Run("Missing manifestPath", func(t *testing.T) {
+			r := Request{
+				Command: "halfpipe-check",
+			}
+			expectedError := ErrMissingArg(r.Command, "manifestPath")
+
+			assert.Equal(t, expectedError, r.Verify())
+		})
+	})
+
 	t.Run("halfpipe-promote", func(t *testing.T) {
 		t.Run("Missing manifestPath", func(t *testing.T) {
 			r := Request{

@@ -4,7 +4,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
-	"github.com/springernature/halfpipe-cf-plugin/executor"
+	"github.com/springernature/halfpipe-cf-plugin"
 )
 
 var (
@@ -18,10 +18,10 @@ var (
 	}
 )
 
-func CheckCFState(appName string, cliConnection executor.CliInterface) error {
+func CheckCFState(appName string, cliConnection halfpipe_cf_plugin.CliInterface) error {
 	apps, err := cliConnection.GetApps()
 	if err != nil {
-		return executor.ErrGetApps(err)
+		return halfpipe_cf_plugin.ErrGetApps(err)
 	}
 
 	oldAppName := CreateOldAppName(appName)

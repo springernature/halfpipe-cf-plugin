@@ -1,9 +1,14 @@
 package command
 
-import "github.com/springernature/halfpipe-cf-plugin/executor"
+import (
+	"github.com/springernature/halfpipe-cf-plugin"
+	"log"
+)
+
+type CmdFunc func(cliConnection halfpipe_cf_plugin.CliInterface, logger *log.Logger) error
 
 type CfCliCommand struct {
-	commandFunc func(cliConnection executor.CliInterface) error
+	commandFunc CmdFunc
 }
 
 func (c CfCliCommand) String() string {
@@ -14,11 +19,11 @@ func (c CfCliCommand) Args() []string {
 	panic("not used")
 }
 
-func (c CfCliCommand) CommandFunc() func(cliConnection executor.CliInterface) error {
+func (c CfCliCommand) CommandFunc() CmdFunc {
 	return c.commandFunc
 }
 
-func NewCfCliCommand(commandFunc func(cliConnection executor.CliInterface) error) Command {
+func NewCfCliCommand(commandFunc CmdFunc) Command {
 	return CfCliCommand{
 		commandFunc: commandFunc,
 	}

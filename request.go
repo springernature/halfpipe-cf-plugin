@@ -42,7 +42,7 @@ func (r Request) Verify() (err error) {
 		if r.TestDomain == "" {
 			return returnErr("testDomain")
 		}
-	case config.CLEANUP, config.DELETE:
+	case config.CHECK, config.CLEANUP, config.DELETE:
 		if r.ManifestPath == "" {
 			return returnErr("manifestPath")
 		}
