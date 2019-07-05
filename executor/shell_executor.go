@@ -1,24 +1,21 @@
-package plan
+package executor
 
 import (
+	"github.com/springernature/halfpipe-cf-plugin/command"
 	"log"
 	"os"
 	"os/exec"
 )
 
-type Executor interface {
-	Execute(cmd Command) error
-}
-
 type shellExecutor struct {
 	logger *log.Logger
 }
 
-func NewShellExecutor(logger *log.Logger) shellExecutor {
+func NewShellExecutor(logger *log.Logger) CommandExecutor {
 	return shellExecutor{logger: logger}
 }
 
-func (s shellExecutor) Execute(command Command) (err error) {
+func (s shellExecutor) Execute(command command.Command) (err error) {
 	cfPath, err := exec.LookPath("cf")
 	if err != nil {
 		return

@@ -1,29 +1,34 @@
-package plan
+package promote
 
 import (
-	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"code.cloudfoundry.org/cli/cf/errors"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
+	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/command"
+	"github.com/springernature/halfpipe-cf-plugin/executor"
+	"github.com/springernature/halfpipe-cf-plugin/helpers"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
 	"strings"
 )
 
 var ErrCandidateNotRunning = errors.New("Canidate app is not running!")
 
 type promote struct {
-	cliConnection CliInterface
+	cliConnection executor.CliInterface
 }
 
-func NewPromotePlanner(cliConnection CliInterface) Planner {
+func NewPromotePlanner(cliConnection executor.CliInterface) plan.Planner {
 	return promote{
 		cliConnection: cliConnection,
 	}
 }
 
-func (p promote) GetPlan(manifest manifest.Application, request Request) (plan Plan, err error) {
+func (p promote) GetPlan(manifest manifest.Application, request halfpipe_cf_plugin.Request) (plan plan.Plan, err error) {
 	currentSpace, err := p.cliConnection.GetCurrentSpace()
 	if err != nil {
-		err = ErrGetCurrentSpace(err)
+		err = executor.ErrGetCurrentSpace(err)
 		return
 	}
 
@@ -56,9 +61,9 @@ func (p promote) GetPlan(manifest manifest.Application, request Request) (plan P
 }
 
 func (p promote) getAndVerifyCandidateAppState(manifestAppName string) (app plugin_models.GetAppModel, err error) {
-	app, err = p.cliConnection.GetApp(createCandidateAppName(manifestAppName))
+	app, err = p.cliConnection.GetApp(helpers.CreateCandidateAppName(manifestAppName))
 	if err != nil {
-		err = ErrGetApp(manifestAppName, err)
+		err = executor.ErrGetApp(manifestAppName, err)
 		return
 	}
 
@@ -90,13 +95,13 @@ func (p promote) GetPreviousAppState(manifestAppName string) (currentLive, curre
 
 	apps, err := p.cliConnection.GetApps()
 	if err != nil {
-		err = ErrGetApps(err)
+		err = executor.ErrGetApps(err)
 		return
 	}
 
 	currentLive = appFinder(manifestAppName, apps)
-	currentOld = appFinder(createOldAppName(manifestAppName), apps)
-	currentDeletes = deleteAppFinder(createDeleteName(manifestAppName, 0), apps)
+	currentOld = appFinder(helpers.CreateOldAppName(manifestAppName), apps)
+	currentDeletes = deleteAppFinder(helpers.CreateDeleteName(manifestAppName, 0), apps)
 	return
 }
 
@@ -104,7 +109,7 @@ func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []strin
 	if !manifest.NoRoute && len(manifest.Routes) > 0 {
 		output, getErr := p.cliConnection.CliCommandWithoutTerminalOutput("domains")
 		if getErr != nil {
-			err = ErrCliCommandWithoutTerminalOutput("cf domains", getErr)
+			err = executor.ErrCliCommandWithoutTerminalOutput("cf domains", getErr)
 			return
 		}
 
@@ -119,7 +124,7 @@ func (p promote) getDomainsInOrg(manifest manifest.Application) (domains []strin
 	return
 }
 
-func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []manifest.Route, domainsInOrg []string) (pl []Command) {
+func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []manifest.Route, domainsInOrg []string) (pl []command.Command) {
 	for _, route := range routes {
 		hostname, domain, path := parseRoute(route.Route, domainsInOrg)
 
@@ -141,7 +146,7 @@ func addManifestRoutes(candidateAppState plugin_models.GetAppModel, routes []man
 			args = append(args, []string{"--path", path}...)
 		}
 
-		pl = append(pl, NewCfCommand(args...))
+		pl = append(pl, command.NewCfShellCommand(args...))
 	}
 	return
 }
@@ -182,7 +187,7 @@ func routeIsBoundToApp(hostname, domain, path string, routes []plugin_models.Get
 	return false
 }
 
-func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppName string, testDomain string, space string) (pl []Command) {
+func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppName string, testDomain string, space string) (pl []command.Command) {
 	appHasRoute := func(hostname string, domain string, routes []plugin_models.GetApp_RouteSummary) bool {
 		for _, route := range routes {
 			if route.Host == hostname && route.Domain.Name == domain {
@@ -194,13 +199,13 @@ func removeTestRoute(candidateAppState plugin_models.GetAppModel, manifestAppNam
 
 	testHostname := fmt.Sprintf("%s-%s-CANDIDATE", manifestAppName, space)
 	if appHasRoute(testHostname, testDomain, candidateAppState.Routes) {
-		pl = append(pl, NewCfCommand("unmap-route", candidateAppState.Name, testDomain, "-n", testHostname))
+		pl = append(pl, command.NewCfShellCommand("unmap-route", candidateAppState.Name, testDomain, "-n", testHostname))
 	}
 
 	return
 }
 
-func renameOldAppToDelete(currentLiveApp, oldApp plugin_models.GetAppsModel, deleteApps []plugin_models.GetAppsModel, manifestAppName string) (pl []Command) {
+func renameOldAppToDelete(currentLiveApp, oldApp plugin_models.GetAppsModel, deleteApps []plugin_models.GetAppsModel, manifestAppName string) (pl []command.Command) {
 	/*
 	Empty name means the app did not exist
 	I.e for the app with name xyz there is no xyz-OLD and xyz-DELETE
@@ -226,14 +231,14 @@ func renameOldAppToDelete(currentLiveApp, oldApp plugin_models.GetAppsModel, del
 		return
 	}
 
-	pl = append(pl, NewCfCommand("rename", oldApp.Name, createDeleteName(manifestAppName, len(deleteApps))))
+	pl = append(pl, command.NewCfShellCommand("rename", oldApp.Name, helpers.CreateDeleteName(manifestAppName, len(deleteApps))))
 	return
 }
 
-func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.GetAppsModel) (pl []Command) {
+func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.GetAppsModel) (pl []command.Command) {
 	if currentLiveApp.Name == "" && currentOldApp.State == "started" {
 		// See TestWorkerAppWithPreviousPromoteFailure.One previously running deployed version.previous promote failed at step [2]
-		pl = append(pl, NewCfCommand("stop", currentOldApp.Name))
+		pl = append(pl, command.NewCfShellCommand("stop", currentOldApp.Name))
 		return
 	}
 
@@ -241,14 +246,14 @@ func renameAndStopCurrentLiveApp(currentLiveApp, currentOldApp plugin_models.Get
 		return
 	}
 
-	pl = append(pl, NewCfCommand("rename", currentLiveApp.Name, createOldAppName(currentLiveApp.Name)))
+	pl = append(pl, command.NewCfShellCommand("rename", currentLiveApp.Name, helpers.CreateOldAppName(currentLiveApp.Name)))
 
 	if currentLiveApp.State == "started" {
-		pl = append(pl, NewCfCommand("stop", createOldAppName(currentLiveApp.Name)))
+		pl = append(pl, command.NewCfShellCommand("stop", helpers.CreateOldAppName(currentLiveApp.Name)))
 	}
 	return
 }
 
-func renameCandidateAppToExpectedName(candidateAppName, expectedName string) Command {
-	return NewCfCommand("rename", candidateAppName, expectedName)
+func renameCandidateAppToExpectedName(candidateAppName, expectedName string) command.Command {
+	return command.NewCfShellCommand("rename", candidateAppName, expectedName)
 }

@@ -2,6 +2,11 @@ package main
 
 import (
 	"flag"
+	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/cleanup"
+	"github.com/springernature/halfpipe-cf-plugin/executor"
+	"github.com/springernature/halfpipe-cf-plugin/promote"
+	"github.com/springernature/halfpipe-cf-plugin/push"
 	"log"
 	"os"
 	"syscall"
@@ -40,7 +45,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 
 	manifestPath, appPath, testDomain, timeout := parseArgs(args)
 
-	pluginRequest := plan.Request{
+	pluginRequest := halfpipe_cf_plugin.Request{
 		Command:      command,
 		ManifestPath: manifestPath,
 		AppPath:      appPath,
@@ -54,9 +59,9 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	planner := plan.NewPlanner(
-		plan.NewPushPlanner(cliConnection),
-		plan.NewPromotePlanner(cliConnection),
-		plan.NewCleanupPlanner(cliConnection),
+		push.NewPushPlanner(cliConnection),
+		promote.NewPromotePlanner(cliConnection),
+		cleanup.NewCleanupPlanner(cliConnection),
 		manifest.NewManifestReadWrite(afero.Afero{Fs: afero.NewOsFs()}),
 	)
 
@@ -68,7 +73,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	logger.Println(p)
-	if err = p.Execute(plan.NewShellExecutor(logger), pluginRequest.Timeout, logger); err != nil {
+	if err = executor.NewExecutor(executor.NewShellExecutor(logger), executor.NewShellExecutor(logger), pluginRequest.Timeout, logger).Execute(p); err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
 	}

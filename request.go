@@ -1,4 +1,4 @@
-package plan
+package halfpipe_cf_plugin
 
 import (
 	"time"

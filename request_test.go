@@ -1,8 +1,8 @@
-package plan
+package halfpipe_cf_plugin
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestRequest(t *testing.T) {

@@ -1,4 +1,4 @@
-package plan
+package executor
 
 import "code.cloudfoundry.org/cli/plugin/models"
 

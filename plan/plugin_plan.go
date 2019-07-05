@@ -2,7 +2,7 @@ package plan
 
 import (
 	"fmt"
-
+	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/config"
 	"github.com/springernature/halfpipe-cf-plugin/manifest"
 
@@ -16,11 +16,11 @@ var ErrUnknownCommand = func(cmd string) error {
 var ErrBadManifest = errors.New("application manifest must contain exactly one application")
 
 type Planner interface {
-	GetPlan(application manifest.Application, request Request) (pl Plan, err error)
+	GetPlan(application manifest.Application, request halfpipe_cf_plugin.Request) (pl Plan, err error)
 }
 
 type PluginPlan interface {
-	GetPlan(request Request) (commands Plan, err error)
+	GetPlan(request halfpipe_cf_plugin.Request) (commands Plan, err error)
 }
 
 type pluginPlan struct {
@@ -39,7 +39,7 @@ func NewPlanner(pushPlan Planner, promotePlan Planner, cleanupPlan Planner, mani
 	}
 }
 
-func (c pluginPlan) GetPlan(request Request) (commands Plan, err error) {
+func (c pluginPlan) GetPlan(request halfpipe_cf_plugin.Request) (commands Plan, err error) {
 	man, err := c.manifestReaderWriter.ReadManifest(request.ManifestPath)
 	if err != nil {
 		return

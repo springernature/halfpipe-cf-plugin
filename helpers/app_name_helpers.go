@@ -1,23 +1,23 @@
-package plan
+package helpers
 
 import (
 	"strings"
 	"fmt"
 )
 
-func createCandidateAppName(appName string) string {
+func CreateCandidateAppName(appName string) string {
 	return strings.Join([]string{appName, "CANDIDATE"}, "-")
 }
 
-func createCandidateHostname(appName string, space string) string {
+func CreateCandidateHostname(appName string, space string) string {
 	return strings.Join([]string{appName, space, "CANDIDATE"}, "-")
 }
 
-func createOldAppName(appName string) string {
+func CreateOldAppName(appName string) string {
 	return strings.Join([]string{appName, "OLD"}, "-")
 }
 
-func createDeleteName(appName string, index int) string {
+func CreateDeleteName(appName string, index int) string {
 	if index == 0 {
 		return fmt.Sprintf("%s-DELETE", appName)
 	}

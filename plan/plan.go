@@ -1,17 +1,11 @@
 package plan
 
 import (
-	"code.cloudfoundry.org/cli/cf/errors"
 	"fmt"
-	"log"
-	"time"
+	"github.com/springernature/halfpipe-cf-plugin/command"
 )
 
-func ErrTimeoutCommand(command Command, timeout time.Duration) error {
-	return errors.New(fmt.Sprintf("'%s' timed out after %s", command, timeout))
-}
-
-type Plan []Command
+type Plan []command.Command
 
 func (p Plan) String() (s string) {
 	if p.IsEmpty() {
@@ -22,29 +16,6 @@ func (p Plan) String() (s string) {
 	s += "# Planned execution\n"
 	for _, command := range p {
 		s += fmt.Sprintf("#\t* %s\n", command)
-	}
-	return
-}
-
-func (p Plan) Execute(executor Executor, timeoutInSeconds time.Duration, logger *log.Logger) (err error) {
-	for _, command := range p {
-		logger.Println(fmt.Sprintf("$ %s", command))
-
-		errChan := make(chan error, 1)
-		go func() {
-			err = executor.Execute(command)
-			errChan <- err
-		}()
-
-		select {
-		case err = <-errChan:
-			if err != nil {
-				return
-			}
-		case <-time.After(timeoutInSeconds):
-			return ErrTimeoutCommand(command, timeoutInSeconds)
-		}
-		logger.Println()
 	}
 	return
 }

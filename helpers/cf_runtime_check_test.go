@@ -1,4 +1,4 @@
-package plan
+package helpers
 
 import (
 	"testing"
@@ -10,12 +10,12 @@ import (
 func TestFailsIfOldAppIsRunning(t *testing.T) {
 	appName := "app"
 
-	oldAppName := createOldAppName(appName)
+	oldAppName := CreateOldAppName(appName)
 	apps := []plugin_models.GetAppsModel{
 		{Name: oldAppName, State: "running"},
 	}
 
-	err := checkCFState(appName, newMockCliConnection().WithApps(apps))
+	err := CheckCFState(appName, NewMockCliConnection().WithApps(apps))
 
 	assert.Equal(t, err, ErrAppRunning(oldAppName))
 }

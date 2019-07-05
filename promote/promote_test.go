@@ -1,41 +1,46 @@
-package plan
+package promote
 
 import (
 	"code.cloudfoundry.org/cli/plugin/models"
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"errors"
-	"github.com/springernature/halfpipe-cf-plugin/manifest"
 	"fmt"
+	"github.com/springernature/halfpipe-cf-plugin"
+	"github.com/springernature/halfpipe-cf-plugin/command"
+	"github.com/springernature/halfpipe-cf-plugin/executor"
+	"github.com/springernature/halfpipe-cf-plugin/helpers"
+	"github.com/springernature/halfpipe-cf-plugin/manifest"
+	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestReturnsErrorIfGetCurrentSpaceFails(t *testing.T) {
 	expectedError := errors.New("error")
-	promote := NewPromotePlanner(newMockCliConnection().WithSpaceError(expectedError))
+	promote := NewPromotePlanner(helpers.NewMockCliConnection().WithSpaceError(expectedError))
 
-	_, err := promote.GetPlan(manifest.Application{}, Request{})
+	_, err := promote.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
 
-	assert.Equal(t, ErrGetCurrentSpace(expectedError), err)
+	assert.Equal(t, executor.ErrGetCurrentSpace(expectedError), err)
 }
 
 
 func TestReturnsErrorIfCandidateAppNotFound(t *testing.T) {
 	applicationName := "kehe"
 	expectedError := errors.New("error")
-	promote := NewPromotePlanner(newMockCliConnection().WithGetAppError(expectedError))
+	promote := NewPromotePlanner(helpers.NewMockCliConnection().WithGetAppError(expectedError))
 
-	_, err := promote.GetPlan(manifest.Application{Name: applicationName}, Request{})
+	_, err := promote.GetPlan(manifest.Application{Name: applicationName}, halfpipe_cf_plugin.Request{})
 
-	assert.Equal(t, ErrGetApp(applicationName, expectedError), err)
+	assert.Equal(t, executor.ErrGetApp(applicationName, expectedError), err)
 }
 
 func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
-	promote := NewPromotePlanner(newMockCliConnection().WithApp(plugin_models.GetAppModel{
+	promote := NewPromotePlanner(helpers.NewMockCliConnection().WithApp(plugin_models.GetAppModel{
 		Name:  "myApp-CANDIDATE",
 		State: "stopped",
 	}))
 
-	_, err := promote.GetPlan(manifest.Application{}, Request{})
+	_, err := promote.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
 
 	assert.Equal(t, ErrCandidateNotRunning, err)
 }
@@ -43,20 +48,20 @@ func TestReturnsErrorIfCandidateAppIsNotRunning(t *testing.T) {
 func TestReturnsErrorIfGetAppsErrorsOut(t *testing.T) {
 	expectedError := errors.New("mehp")
 
-	promote := NewPromotePlanner(newMockCliConnection().
+	promote := NewPromotePlanner(helpers.NewMockCliConnection().
 		WithApp(plugin_models.GetAppModel{
 		Name:  "myApp-CANDIDATE",
 		State: "started",
 	}).
 		WithGetAppsError(expectedError))
 
-	_, err := promote.GetPlan(manifest.Application{}, Request{})
-	assert.Equal(t, ErrGetApps(expectedError), err)
+	_, err := promote.GetPlan(manifest.Application{}, halfpipe_cf_plugin.Request{})
+	assert.Equal(t, executor.ErrGetApps(expectedError), err)
 }
 
 func TestWorkerApp(t *testing.T) {
 	t.Run("No previously deployed version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -66,17 +71,17 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
 
 	t.Run("One previously deployed stopped version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -92,18 +97,18 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", man.Name, helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
 
 	t.Run("One previously deployed started version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -119,19 +124,19 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
-			NewCfCommand("stop", createOldAppName(man.Name)),
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", man.Name, helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
 
 	t.Run("One previously deployed started version with an stopped old version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -151,20 +156,20 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", createOldAppName(man.Name), createDeleteName(man.Name, 0)),
-			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
-			NewCfCommand("stop", createOldAppName(man.Name)),
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", helpers.CreateOldAppName(man.Name), helpers.CreateDeleteName(man.Name, 0)),
+			command.NewCfShellCommand("rename", man.Name, helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
 
 	t.Run("One previously deployed started version with an stopped old version and a uncleaned up DELETE app", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -188,20 +193,20 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", createOldAppName(man.Name), createDeleteName(man.Name, 1)),
-			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
-			NewCfCommand("stop", createOldAppName(man.Name)),
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", helpers.CreateOldAppName(man.Name), helpers.CreateDeleteName(man.Name, 1)),
+			command.NewCfShellCommand("rename", man.Name, helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
 
 	t.Run("One previously deployed started version with an stopped old version and a couple of uncleaned DELETE apps", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -235,14 +240,14 @@ func TestWorkerApp(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", createOldAppName(man.Name), createDeleteName(man.Name, 3)),
-			NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
-			NewCfCommand("stop", createOldAppName(man.Name)),
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", helpers.CreateOldAppName(man.Name), helpers.CreateDeleteName(man.Name, 3)),
+			command.NewCfShellCommand("rename", man.Name, helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -290,7 +295,7 @@ func TestAppWithRoute(t *testing.T) {
 	}
 
 	candidateApp := plugin_models.GetAppModel{
-		Name:  createCandidateAppName(appName),
+		Name:  helpers.CreateCandidateAppName(appName),
 		State: "started",
 		Routes: []plugin_models.GetApp_RouteSummary{
 			{
@@ -302,36 +307,36 @@ func TestAppWithRoute(t *testing.T) {
 		},
 	}
 
-	request := Request{
+	request := halfpipe_cf_plugin.Request{
 		TestDomain: testDomain,
 	}
 
 	t.Run("Errors out if we cannot get domains in org", func(t *testing.T) {
 		expectedError := errors.New("meeehp")
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(candidateApp).
 			WithCliError(expectedError))
 
 		_, err := promote.GetPlan(man, request)
-		assert.Equal(t, ErrCliCommandWithoutTerminalOutput("cf domains", expectedError), err)
+		assert.Equal(t, executor.ErrCliCommandWithoutTerminalOutput("cf domains", expectedError), err)
 	})
 
 	t.Run("No previously deployed version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithSpace(space).
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
-			{Name: createCandidateAppName(appName)},
+			{Name: helpers.CreateCandidateAppName(appName)},
 		}))
 
-		expectedPlan := Plan{
-			NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
-			NewCfCommand("map-route", createCandidateAppName(appName), route2),
-			NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
-			NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-			NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-			NewCfCommand("rename", createCandidateAppName(appName), appName),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route1Domain, "-n", route1Host),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route2),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route4Domain, "--path", route4Path),
+			command.NewCfShellCommand("unmap-route", helpers.CreateCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(appName), appName),
 		}
 
 		plan, err := promote.GetPlan(man, request)
@@ -340,24 +345,24 @@ func TestAppWithRoute(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started live version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithSpace(space).
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
-			{Name: createCandidateAppName(appName), State: "started"},
+			{Name: helpers.CreateCandidateAppName(appName), State: "started"},
 			{Name: appName, State: "started"},
 		}))
 
-		expectedPlan := Plan{
-			NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
-			NewCfCommand("map-route", createCandidateAppName(appName), route2),
-			NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
-			NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-			NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-			NewCfCommand("rename", appName, createOldAppName(appName)),
-			NewCfCommand("stop", createOldAppName(appName)),
-			NewCfCommand("rename", createCandidateAppName(appName), appName),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route1Domain, "-n", route1Host),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route2),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route4Domain, "--path", route4Path),
+			command.NewCfShellCommand("unmap-route", helpers.CreateCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			command.NewCfShellCommand("rename", appName, helpers.CreateOldAppName(appName)),
+			command.NewCfShellCommand("stop", helpers.CreateOldAppName(appName)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(appName), appName),
 		}
 
 		plan, err := promote.GetPlan(man, request)
@@ -366,17 +371,17 @@ func TestAppWithRoute(t *testing.T) {
 	})
 
 	t.Run("One previously deployed started live version and a stopped older version", func(t *testing.T) {
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithSpace(space).
 			WithApp(candidateApp).
 			WithCliOutput(cfDomains).
 			WithApps([]plugin_models.GetAppsModel{
 			{
-				Name:  createCandidateAppName(appName),
+				Name:  helpers.CreateCandidateAppName(appName),
 				State: "started",
 			},
 			{
-				Name:  createOldAppName(appName),
+				Name:  helpers.CreateOldAppName(appName),
 				State: "stopped",
 			},
 			{
@@ -385,16 +390,16 @@ func TestAppWithRoute(t *testing.T) {
 			},
 		}))
 
-		expectedPlan := Plan{
-			NewCfCommand("map-route", createCandidateAppName(appName), route1Domain, "-n", route1Host),
-			NewCfCommand("map-route", createCandidateAppName(appName), route2),
-			NewCfCommand("map-route", createCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
-			NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-			NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-			NewCfCommand("rename", createOldAppName(appName), createDeleteName(appName, 0)),
-			NewCfCommand("rename", appName, createOldAppName(appName)),
-			NewCfCommand("stop", createOldAppName(appName)),
-			NewCfCommand("rename", createCandidateAppName(appName), appName),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route1Domain, "-n", route1Host),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route2),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route3Domain, "-n", route3Host, "--path", route3Path),
+			command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route4Domain, "--path", route4Path),
+			command.NewCfShellCommand("unmap-route", helpers.CreateCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+			command.NewCfShellCommand("rename", helpers.CreateOldAppName(appName), helpers.CreateDeleteName(appName, 0)),
+			command.NewCfShellCommand("rename", appName, helpers.CreateOldAppName(appName)),
+			command.NewCfShellCommand("stop", helpers.CreateOldAppName(appName)),
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(appName), appName),
 		}
 
 		plan, err := promote.GetPlan(man, request)
@@ -443,7 +448,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 	}
 
 	candidateApp := plugin_models.GetAppModel{
-		Name:  createCandidateAppName(appName),
+		Name:  helpers.CreateCandidateAppName(appName),
 		State: "started",
 		Routes: []plugin_models.GetApp_RouteSummary{
 			{
@@ -455,7 +460,7 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 		},
 	}
 
-	request := Request{
+	request := halfpipe_cf_plugin.Request{
 		TestDomain: testDomain,
 	}
 
@@ -498,18 +503,18 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				}, //[3]
 			}
 
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithSpace(space).
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
-				{Name: createCandidateAppName(appName)},
+				{Name: helpers.CreateCandidateAppName(appName)},
 			}))
 
-			expectedPlan := Plan{
-				NewCfCommand("map-route", createCandidateAppName(appName), route4Domain, "--path", route4Path),
-				NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-				NewCfCommand("rename", createCandidateAppName(appName), appName),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("map-route", helpers.CreateCandidateAppName(appName), route4Domain, "--path", route4Path),
+				command.NewCfShellCommand("unmap-route", helpers.CreateCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(appName), appName),
 			}
 
 			plan, err := promote.GetPlan(man, request)
@@ -552,17 +557,17 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 				}, //[4]
 			}
 
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithSpace(space).
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
-				{Name: createCandidateAppName(appName)},
+				{Name: helpers.CreateCandidateAppName(appName)},
 			}))
 
-			expectedPlan := Plan{
-				NewCfCommand("unmap-route", createCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
-				NewCfCommand("rename", createCandidateAppName(appName), appName),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("unmap-route", helpers.CreateCandidateAppName(appName), testDomain, "-n", appCandidateHostname),
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(appName), appName),
 			}
 
 			plan, err := promote.GetPlan(man, request)
@@ -599,15 +604,15 @@ func TestAppWithRouteWhenPreviousPromoteFailure(t *testing.T) {
 					},
 				}, //[4]
 			}
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithApp(candidateApp).
 				WithCliOutput(cfDomains).
 				WithApps([]plugin_models.GetAppsModel{
-				{Name: createCandidateAppName(appName)},
+				{Name: helpers.CreateCandidateAppName(appName)},
 			}))
 
-			expectedPlan := Plan{
-				NewCfCommand("rename", createCandidateAppName(appName), appName),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(appName), appName),
 			}
 
 			plan, err := promote.GetPlan(man, request)
@@ -632,7 +637,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		*/
 
 		//
-		promote := NewPromotePlanner(newMockCliConnection().
+		promote := NewPromotePlanner(helpers.NewMockCliConnection().
 			WithApp(plugin_models.GetAppModel{
 			Name:  "myApp-CANDIDATE",
 			State: "started",
@@ -645,11 +650,11 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 			Name:    "myApp",
 			NoRoute: true,
 		}
-		expectedPlan := Plan{
-			NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+		expectedPlan := plan.Plan{
+			command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 		}
 
-		plan, err := promote.GetPlan(man, Request{})
+		plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 		assert.Nil(t, err)
 		assert.Equal(t, expectedPlan, plan)
 	})
@@ -663,7 +668,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		*/
 
 		t.Run("previous promote failed at step [2]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -677,18 +682,18 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := Plan{
-				NewCfCommand("stop", createOldAppName(man.Name)),
-				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(man, Request{})
+			plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
 
 		t.Run("previous promote failed at step [3]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -702,11 +707,11 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := Plan{
-				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(man, Request{})
+			plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
@@ -723,7 +728,7 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 		*/
 
 		t.Run("previous promote failed at step [2]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -738,19 +743,19 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := Plan{
-				NewCfCommand("rename", man.Name, createOldAppName(man.Name)),
-				NewCfCommand("stop", createOldAppName(man.Name)),
-				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("rename", man.Name, helpers.CreateOldAppName(man.Name)),
+				command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(man, Request{})
+			plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
 
 		t.Run("previous promote failed at step [3]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -765,18 +770,18 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := Plan{
-				NewCfCommand("stop", createOldAppName(man.Name)),
-				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("stop", helpers.CreateOldAppName(man.Name)),
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(man, Request{})
+			plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})
 
 		t.Run("previous promote failed at step [4]", func(t *testing.T) {
-			promote := NewPromotePlanner(newMockCliConnection().
+			promote := NewPromotePlanner(helpers.NewMockCliConnection().
 				WithApp(plugin_models.GetAppModel{
 				Name:  "myApp-CANDIDATE",
 				State: "started",
@@ -791,11 +796,11 @@ func TestWorkerAppWithPreviousPromoteFailure(t *testing.T) {
 				Name:    "myApp",
 				NoRoute: true,
 			}
-			expectedPlan := Plan{
-				NewCfCommand("rename", createCandidateAppName(man.Name), man.Name),
+			expectedPlan := plan.Plan{
+				command.NewCfShellCommand("rename", helpers.CreateCandidateAppName(man.Name), man.Name),
 			}
 
-			plan, err := promote.GetPlan(man, Request{})
+			plan, err := promote.GetPlan(man, halfpipe_cf_plugin.Request{})
 			assert.Nil(t, err)
 			assert.Equal(t, expectedPlan, plan)
 		})

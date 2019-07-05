@@ -1,4 +1,4 @@
-package plan
+package command
 
 import (
 	"fmt"
@@ -6,28 +6,23 @@ import (
 	"strings"
 )
 
-type Command interface {
-	fmt.Stringer
-	Args() []string
-}
-
-type cfCommand struct {
+type CfShellCommand struct {
 	command      string
 	args         []string
 }
 
-func NewCfCommand(args ...string) Command {
-	return cfCommand{
+func NewCfShellCommand(args ...string) Command {
+	return CfShellCommand{
 		command: "cf",
 		args:    args,
 	}
 }
 
-func (c cfCommand) Args() []string {
+func (c CfShellCommand) Args() []string {
 	return c.args
 }
 
-func (c cfCommand) String() string {
+func (c CfShellCommand) String() string {
 	var commandArgs = strings.Join(c.args, " ")
 
 	if strings.HasPrefix(commandArgs, "login") {

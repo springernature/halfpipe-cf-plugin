@@ -1,4 +1,4 @@
-package plan
+package helpers
 
 import "code.cloudfoundry.org/cli/plugin/models"
 
@@ -74,7 +74,7 @@ func (m mockCliConnection) WithSpaceError(err error) mockCliConnection {
 	return m
 }
 
-func newMockCliConnection() mockCliConnection {
+func NewMockCliConnection() mockCliConnection {
 	return mockCliConnection{
 	}
 }
