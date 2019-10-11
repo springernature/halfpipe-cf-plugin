@@ -91,14 +91,13 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 				Name:     config.PUSH,
 				HelpText: "Pushes the app with name `my-app` as a `my-app-candidate` and binds a single temporary route to it for testing",
 				UsageDetails: cfPlugin.Usage{
-					Usage: "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-space DOMAIN] [-preStartCommand CF COMMAND]",
+					Usage: "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-timeout TIMEOUT] [-preStartCommand CF COMMAND]",
 					Options: map[string]string{
-						"-manifestPath":    "Relative or absolute path to cf manifest",
-						"-appPath":         "Relative or absolute path to the app bits you wish to deploy",
-						"-testDomain":      "Domain that will be used when constructing the candidate route for the app",
-						"-space":           "Space will be used when constructing the candidate test route",
-						"-timeout":         "Timeout for all the sub commands, example 10s, 2m37s",
-						"-preStartCommand": "cf command to run before the application is started",
+						"manifestPath":    "Relative or absolute path to cf manifest",
+						"appPath":         "Relative or absolute path to the app bits you wish to deploy",
+						"testDomain":      "Domain that will be used when constructing the candidate route for the app",
+						"timeout":         "Timeout for all the sub commands, example 10s, 2m37s",
+						"preStartCommand": "cf command to run before the application is started",
 					},
 				},
 			},
@@ -106,9 +105,10 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 				Name:     config.CHECK,
 				HelpText: "Checks that all instances are in running state",
 				UsageDetails: cfPlugin.Usage{
-					Usage: "cf halfpipe-check [-manifestPath PATH]",
+					Usage: "cf halfpipe-check [-manifestPath PATH] [-timeout TIMEOUT]",
 					Options: map[string]string{
 						"-manifestPath": "Relative or absolute path to cf manifest",
+						"-timeout":      "Timeout for all the sub commands, example 10s, 2m37s",
 					},
 				},
 			},
@@ -116,11 +116,10 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 				Name:     config.PROMOTE,
 				HelpText: "Promotes the app from `my-app-candidate` to `my-app`, binds all the production routes, removes the test route and stops old instances of the app",
 				UsageDetails: cfPlugin.Usage{
-					Usage: "cf halfpipe-push [-manifestPath PATH] [-testDomain DOMAIN] [-space DOMAIN]",
+					Usage: "cf halfpipe-push [-manifestPath PATH] [-testDomain DOMAIN] [-timeout TIMEOUT]",
 					Options: map[string]string{
 						"-manifestPath": "Relative or absolute path to cf manifest",
 						"-testDomain":   "Domain that will be used when constructing the candidate route for the app",
-						"-space":        "Space will be used when constructing the candidate test route",
 						"-timeout":      "Timeout for all the sub commands, example 10s, 2m37s",
 					},
 				},
@@ -133,7 +132,7 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 				Name:     config.CLEANUP,
 				HelpText: "Cleanups all apps that has the -DELETE postfix",
 				UsageDetails: cfPlugin.Usage{
-					Usage: "cf halfpipe-cleanup [-manifestPath PATH]",
+					Usage: "cf halfpipe-cleanup [-manifestPath PATH] [-timeout TIMEOUT]",
 					Options: map[string]string{
 						"-manifestPath": "Relative or absolute path to cf manifest",
 						"-timeout":      "Timeout for all the sub commands, example 10s, 2m37s",
