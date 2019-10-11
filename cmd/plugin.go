@@ -22,17 +22,18 @@ import (
 
 type Halfpipe struct{}
 
-func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration) {
+func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
 	aP := flagSet.String("appPath", "", "Path to the app")
 	tD := flagSet.String("testDomain", "", "Domain to push the app to during the candidate stage")
 	tO := flagSet.Duration("timeout", 5*time.Minute, "Timeout for each command")
+	pS := flagSet.String("preStartCommand", "", "cf command to run before the application is started")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
 
-	return *mP, *aP, *tD, *tO
+	return *mP, *aP, *tD, *tO, *pS
 }
 
 func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
@@ -44,14 +45,15 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(0)
 	}
 
-	manifestPath, appPath, testDomain, timeout := parseArgs(args)
+	manifestPath, appPath, testDomain, timeout, preStartCommand := parseArgs(args)
 
 	pluginRequest := halfpipe_cf_plugin.Request{
-		Command:      command,
-		ManifestPath: manifestPath,
-		AppPath:      appPath,
-		TestDomain:   testDomain,
-		Timeout:      timeout,
+		Command:         command,
+		ManifestPath:    manifestPath,
+		AppPath:         appPath,
+		TestDomain:      testDomain,
+		Timeout:         timeout,
+		PreStartCommand: preStartCommand,
 	}
 
 	if err := pluginRequest.Verify(); err != nil {
@@ -89,13 +91,14 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 				Name:     config.PUSH,
 				HelpText: "Pushes the app with name `my-app` as a `my-app-candidate` and binds a single temporary route to it for testing",
 				UsageDetails: cfPlugin.Usage{
-					Usage: "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-space DOMAIN]",
+					Usage: "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-space DOMAIN] [-preStartCommand CF COMMAND]",
 					Options: map[string]string{
-						"-manifestPath": "Relative or absolute path to cf manifest",
-						"-appPath":      "Relative or absolute path to the app bits you wish to deploy",
-						"-testDomain":   "Domain that will be used when constructing the candidate route for the app",
-						"-space":        "Space will be used when constructing the candidate test route",
-						"-timeout":      "Timeout for all the sub commands, example 10s, 2m37s",
+						"-manifestPath":    "Relative or absolute path to cf manifest",
+						"-appPath":         "Relative or absolute path to the app bits you wish to deploy",
+						"-testDomain":      "Domain that will be used when constructing the candidate route for the app",
+						"-space":           "Space will be used when constructing the candidate test route",
+						"-timeout":         "Timeout for all the sub commands, example 10s, 2m37s",
+						"-preStartCommand": "cf command to run before the application is started",
 					},
 				},
 			},
