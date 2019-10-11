@@ -10,6 +10,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/push"
 	"log"
 	"os"
+	"strings"
 	"syscall"
 
 	cfPlugin "code.cloudfoundry.org/cli/plugin"
@@ -46,6 +47,12 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 	}
 
 	manifestPath, appPath, testDomain, timeout, preStartCommand := parseArgs(args)
+
+	// not sure if this will ever happen in reality, but in the integration tests
+	// we are given the string in quotes `"<value>"`
+	if strings.HasPrefix(preStartCommand, `"`) && strings.HasSuffix(preStartCommand, `"`) {
+		preStartCommand = preStartCommand[1 : len(preStartCommand)-1]
+	}
 
 	pluginRequest := halfpipe_cf_plugin.Request{
 		Command:         command,
