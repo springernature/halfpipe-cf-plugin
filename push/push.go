@@ -1,6 +1,8 @@
 package push
 
 import (
+	"strings"
+
 	"github.com/springernature/halfpipe-cf-plugin"
 	"github.com/springernature/halfpipe-cf-plugin/command"
 	. "github.com/springernature/halfpipe-cf-plugin/helpers"
@@ -65,11 +67,14 @@ func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plug
 			//	candidateName,
 			//	"http",
 			//),
-			command.NewCfShellCommand(
-				"start",
-				candidateName,
-			),
 		}
+
+		if strings.HasPrefix(request.PreStartCommand, "cf ") {
+			pl = append(pl, command.NewCfShellCommand(strings.Split(request.PreStartCommand, " ")[1:]...))
+		}
+
+		pl = append(pl, command.NewCfShellCommand("start", candidateName))
+
 	}
 	return
 }
