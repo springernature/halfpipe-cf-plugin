@@ -42,10 +42,13 @@ func (r Request) Verify() (err error) {
 		if r.TestDomain == "" {
 			return missingArg("testDomain")
 		}
-		for _, preStartCommand := range strings.Split(r.PreStartCommand, ";") {
-			trimmedCommand := strings.TrimSpace(preStartCommand)
-			if !strings.HasPrefix(trimmedCommand, "cf ") {
-				return ErrInvalidPreStartCommand(trimmedCommand)
+
+		if len(r.PreStartCommand) > 0 {
+			for _, preStartCommand := range strings.Split(r.PreStartCommand, ";") {
+				trimmedCommand := strings.TrimSpace(preStartCommand)
+				if !strings.HasPrefix(trimmedCommand, "cf ") {
+					return ErrInvalidPreStartCommand(trimmedCommand)
+				}
 			}
 		}
 

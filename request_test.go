@@ -87,6 +87,17 @@ func TestRequest(t *testing.T) {
 			assert.NoError(t, r.Verify())
 		})
 
+		t.Run("Empty preStartCommand", func(t *testing.T) {
+			r := Request{
+				Command:         "halfpipe-push",
+				ManifestPath:    "path",
+				AppPath:         "path",
+				TestDomain:      "test.domain",
+				PreStartCommand: "",
+			}
+
+			assert.NoError(t, r.Verify())
+		})
 	})
 
 	t.Run("halfpipe-check", func(t *testing.T) {
