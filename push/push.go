@@ -69,8 +69,11 @@ func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plug
 			//),
 		}
 
-		if strings.HasPrefix(request.PreStartCommand, "cf ") {
-			pl = append(pl, command.NewCfShellCommand(strings.Split(request.PreStartCommand, " ")[1:]...))
+		for _, preStartCommand := range strings.Split(request.PreStartCommand, ";") {
+			trimmedCommand := strings.TrimSpace(preStartCommand)
+			if strings.HasPrefix(trimmedCommand, "cf ") {
+				pl = append(pl, command.NewCfShellCommand(strings.Split(trimmedCommand, " ")[1:]...))
+			}
 		}
 
 		pl = append(pl, command.NewCfShellCommand("start", candidateName))

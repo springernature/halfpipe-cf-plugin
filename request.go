@@ -3,9 +3,10 @@ package halfpipe_cf_plugin
 import (
 	"errors"
 	"fmt"
-	"github.com/springernature/halfpipe-cf-plugin/config"
 	"strings"
 	"time"
+
+	"github.com/springernature/halfpipe-cf-plugin/config"
 )
 
 func ErrMissingArg(command string, arg string) error {
@@ -41,8 +42,11 @@ func (r Request) Verify() (err error) {
 		if r.TestDomain == "" {
 			return missingArg("testDomain")
 		}
-		if len(r.PreStartCommand) > 0 && !strings.HasPrefix(r.PreStartCommand, "cf ") {
-			return ErrInvalidPreStartCommand(r.PreStartCommand)
+		for _, preStartCommand := range strings.Split(r.PreStartCommand, ";") {
+			trimmedCommand := strings.TrimSpace(preStartCommand)
+			if !strings.HasPrefix(trimmedCommand, "cf ") {
+				return ErrInvalidPreStartCommand(trimmedCommand)
+			}
 		}
 
 	case config.PROMOTE:

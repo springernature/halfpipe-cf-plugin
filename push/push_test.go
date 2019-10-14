@@ -81,12 +81,12 @@ func TestGivesBackAPushPlanForWorkerApp(t *testing.T) {
 	assert.Equal(t, expectedPlan, commands)
 }
 
-func TestGivesBackAPushPlanIncludingPreStartCommand(t *testing.T) {
+func TestGivesBackAPushPlanIncludingPreStartCommands(t *testing.T) {
 	manifestPath := "path/to/manifest.yml"
 	appPath := "path/to/app.jar"
 	testDomain := "domain.com"
 	space := "dev"
-	preStartCommand := "cf add-network or something"
+	preStartCommand := "cf add-network or something;cf something else"
 
 	application := manifest.Application{
 		Name: "my-app",
@@ -100,6 +100,7 @@ func TestGivesBackAPushPlanIncludingPreStartCommand(t *testing.T) {
 		command.NewCfShellCommand("map-route", expectedApplicationName, testDomain, "-n", expectedApplicationHostname),
 		//NewCfShellCommand("set-health-check", expectedApplicationName, "http"),
 		command.NewCfShellCommand("add-network", "or", "something"),
+		command.NewCfShellCommand("something", "else"),
 		command.NewCfShellCommand("start", expectedApplicationName),
 	}
 

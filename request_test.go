@@ -62,6 +62,31 @@ func TestRequest(t *testing.T) {
 			assert.NoError(t, r.Verify())
 		})
 
+		t.Run("Invalid preStartCommand - semi-colon delimited", func(t *testing.T) {
+			r := Request{
+				Command:         "halfpipe-push",
+				ManifestPath:    "path",
+				AppPath:         "path",
+				TestDomain:      "test.domain",
+				PreStartCommand: "cf something good; something bad",
+			}
+			expectedError := ErrInvalidPreStartCommand("something bad")
+
+			assert.Equal(t, expectedError, r.Verify())
+		})
+
+		t.Run("Valid preStartCommand - semi-colon delimited", func(t *testing.T) {
+			r := Request{
+				Command:         "halfpipe-push",
+				ManifestPath:    "path",
+				AppPath:         "path",
+				TestDomain:      "test.domain",
+				PreStartCommand: "cf something good; cf something else good",
+			}
+
+			assert.NoError(t, r.Verify())
+		})
+
 	})
 
 	t.Run("halfpipe-check", func(t *testing.T) {

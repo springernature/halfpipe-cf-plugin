@@ -29,7 +29,7 @@ func parseArgs(args []string) (manifestPath string, appPath string, testDomain s
 	aP := flagSet.String("appPath", "", "Path to the app")
 	tD := flagSet.String("testDomain", "", "Domain to push the app to during the candidate stage")
 	tO := flagSet.Duration("timeout", 5*time.Minute, "Timeout for each command")
-	pS := flagSet.String("preStartCommand", "", "cf command to run before the application is started")
+	pS := flagSet.String("preStartCommand", "", "cf command to run before the application is started. Supports multiple commands semi-colon delimited.")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
@@ -104,7 +104,7 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 						"appPath":         "Relative or absolute path to the app bits you wish to deploy",
 						"testDomain":      "Domain that will be used when constructing the candidate route for the app",
 						"timeout":         "Timeout for all the sub commands, example 10s, 2m37s",
-						"preStartCommand": "cf command to run before the application is started",
+						"preStartCommand": "cf command to run before the application is started. Supports multiple commands semi-colon delimited.",
 					},
 				},
 			},
