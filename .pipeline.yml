@@ -1,42 +1,21 @@
-resources:
-- name: git
-  type: git
-  source:
-    private_key: ((github.private_key))
-    uri: git@github.com:springernature/halfpipe-cf-plugin.git
-
-- name: version
-  type: semver
-  source:
-    branch: version
-    driver: git
-    file: version
-    private_key: ((github.private_key))
-    uri: git@github.com:springernature/halfpipe-cf-plugin.git
-
-- name: release
-  type: github-release
-  source:
-    access_token: ((api-keys.halfpipe-cli))
-    owner: springernature
-    repository: halfpipe-cf-plugin
-
 jobs:
 - name: Test, build and release
-  serial: true
   plan:
   - get: git
     trigger: true
-  - task: Test and build
-    config:
-      platform: linux
+  - config:
+      container_limits: {}
       image_resource:
-        type: docker-image
         source:
           repository: golang
           tag: 1.11-stretch
+        type: docker-image
+      inputs:
+      - name: git
+      outputs:
+      - name: artifacts
+      platform: linux
       run:
-        path: /bin/sh
         args:
         - -ec
         - |
@@ -66,16 +45,38 @@ jobs:
           CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_darwin cmd/plugin.go
           CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_linux cmd/plugin.go
           CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -ldflags "-X github.com/springernature/halfpipe-cf-plugin/config.SHA=`cat .git/ref`" -o $ARTIFACTS/halfpipe_cf_plugin_windows.exe cmd/plugin.go
-      inputs:
-      - name: git
-      outputs:
-      - name: artifacts
-  - put: version
-    params:
+        path: /bin/sh
+    task: Test and build
+  - params:
       bump: minor
-  - put: release
-    params:
+    put: version
+  - params:
       globs:
-        - artifacts/halfpipe_cf_plugin_*
+      - artifacts/halfpipe_cf_plugin_*
       name: git/.name
       tag: version/version
+    put: release
+  serial: true
+resources:
+- name: git
+  source:
+    private_key: ((github.private_key))
+    uri: git@github.com:springernature/halfpipe-cf-plugin.git
+  type: git
+  check_every: 24h
+- name: release
+  source:
+    access_token: ((api-keys.halfpipe-cli))
+    owner: springernature
+    repository: halfpipe-cf-plugin
+  type: github-release
+  check_every: 24h
+- name: version
+  source:
+    branch: version
+    driver: git
+    file: version
+    private_key: ((github.private_key))
+    uri: git@github.com:springernature/halfpipe-cf-plugin.git
+  type: semver
+  check_every: 24h
