@@ -60,7 +60,7 @@ jobs:
 resources:
 - name: git
   source:
-    private_key: ((github.private_key))
+    private_key: ((halfpipe-github.private_key))
     uri: git@github.com:springernature/halfpipe-cf-plugin.git
   type: git
   check_every: 24h
