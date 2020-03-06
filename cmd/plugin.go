@@ -23,18 +23,19 @@ import (
 
 type Halfpipe struct{}
 
-func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string) {
+func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string, instances int) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
 	aP := flagSet.String("appPath", "", "Path to the app")
 	tD := flagSet.String("testDomain", "", "Domain to push the app to during the candidate stage")
 	tO := flagSet.Duration("timeout", 5*time.Minute, "Timeout for each command")
 	pS := flagSet.String("preStartCommand", "", "cf command to run before the application is started. Supports multiple commands semi-colon delimited.")
+	iC := flagSet.Int("instances", 0, "Instances to deploy. Overrides value in manifest")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
 
-	return *mP, *aP, *tD, *tO, *pS
+	return *mP, *aP, *tD, *tO, *pS, *iC
 }
 
 func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
@@ -46,7 +47,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(0)
 	}
 
-	manifestPath, appPath, testDomain, timeout, preStartCommand := parseArgs(args)
+	manifestPath, appPath, testDomain, timeout, preStartCommand, instances := parseArgs(args)
 
 	// not sure if this will ever happen in reality, but in the integration tests
 	// we are given the string in quotes `"<value>"`
@@ -61,6 +62,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		TestDomain:      testDomain,
 		Timeout:         timeout,
 		PreStartCommand: preStartCommand,
+		Instances:       instances,
 	}
 
 	if err := pluginRequest.Verify(); err != nil {
@@ -105,6 +107,7 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 						"testDomain":      "Domain that will be used when constructing the candidate route for the app",
 						"timeout":         "Timeout for all the sub commands, example 10s, 2m37s",
 						"preStartCommand": "cf command to run before the application is started. Supports multiple commands semi-colon delimited.",
+						"instances":       "how many instances to push the app with. If not specified it will read the instance count from the manifest",
 					},
 				},
 			},

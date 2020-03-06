@@ -24,6 +24,7 @@ type Request struct {
 	TestDomain      string
 	Timeout         time.Duration
 	PreStartCommand string
+	Instances       int
 }
 
 func (r Request) Verify() (err error) {

@@ -5,6 +5,7 @@ import (
 	"github.com/springernature/halfpipe-cf-plugin/command"
 	"github.com/springernature/halfpipe-cf-plugin/helpers"
 	"github.com/springernature/halfpipe-cf-plugin/plan"
+	"strconv"
 	"testing"
 
 	"code.cloudfoundry.org/cli/cf/errors"
@@ -48,6 +49,41 @@ func TestGivesBackAPushPlan(t *testing.T) {
 		AppPath:      appPath,
 		TestDomain:   testDomain,
 	})
+
+	assert.Nil(t, err)
+	assert.Equal(t, expectedPlan, commands)
+}
+
+func TestGivesBackAPushPlanWithInstances(t *testing.T) {
+	manifestPath := "path/to/manifest.yml"
+	appPath := "path/to/app.jar"
+	testDomain := "domain.com"
+	space := "dev"
+	instances := 1337
+
+	application := manifest.Application{
+		Name: "my-app",
+	}
+
+	expectedApplicationName := helpers.CreateCandidateAppName(application.Name)
+	expectedApplicationHostname := helpers.CreateCandidateHostname(application.Name, space)
+
+	expectedPlan := plan.Plan{
+		command.NewCfShellCommand("push", expectedApplicationName, "-f", manifestPath, "-p", appPath, "-i", strconv.Itoa(instances), "--no-route", "--no-start"),
+		command.NewCfShellCommand("map-route", expectedApplicationName, testDomain, "-n", expectedApplicationHostname),
+		//NewCfShellCommand("set-health-check", expectedApplicationName, "http"),
+		command.NewCfShellCommand("start", expectedApplicationName),
+	}
+
+	push := NewPushPlanner(helpers.NewMockCliConnection().WithSpace(space))
+
+	request := halfpipe_cf_plugin.Request{
+		ManifestPath: manifestPath,
+		AppPath:      appPath,
+		TestDomain:   testDomain,
+		Instances:    instances,
+	}
+	commands, err := push.GetPlan(application, request)
 
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPlan, commands)

@@ -1,6 +1,7 @@
 package push
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/springernature/halfpipe-cf-plugin"
@@ -47,26 +48,25 @@ func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plug
 			),
 		}
 	} else {
+		pushArgs := []string{
+			"push",
+			candidateName,
+			"-f", request.ManifestPath,
+			"-p", request.AppPath,
+		}
+		if request.Instances != 0 {
+			pushArgs = append(pushArgs, "-i", strconv.Itoa(request.Instances))
+		}
+		pushArgs = append(pushArgs, "--no-route", "--no-start")
+
 		pl = plan.Plan{
-			command.NewCfShellCommand(
-				"push",
-				candidateName,
-				"-f", request.ManifestPath,
-				"-p", request.AppPath,
-				"--no-route",
-				"--no-start",
-			),
+			command.NewCfShellCommand(pushArgs...),
 			command.NewCfShellCommand(
 				"map-route",
 				candidateName,
 				request.TestDomain,
 				"-n", candidateHost,
 			),
-			//NewCfShellCommand(
-			//	"set-health-check",
-			//	candidateName,
-			//	"http",
-			//),
 		}
 
 		if len(request.PreStartCommand) > 0 {
