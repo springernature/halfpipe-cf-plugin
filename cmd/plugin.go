@@ -65,7 +65,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		Instances:       instances,
 	}
 
-	if err := pluginRequest.Verify(); err != nil {
+	if err := pluginRequest.Verify(manifestPath, manifest.NewManifestReadWrite(afero.Afero{Fs: afero.NewOsFs()})); err != nil {
 		logger.Println(err)
 		syscall.Exit(1)
 	}
