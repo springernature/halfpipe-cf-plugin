@@ -38,22 +38,21 @@ func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plug
 		return
 	}
 
+	pushArgs := []string{
+		"push",
+		candidateName,
+		"-f", request.ManifestPath,
+		//"-p", request.AppPath,
+	}
+	if application.Docker.Image == "" {
+		pushArgs = append(pushArgs, "-p", request.AppPath)
+	}
+
 	if application.NoRoute {
 		pl = plan.Plan{
-			command.NewCfShellCommand(
-				"push",
-				candidateName,
-				"-f", request.ManifestPath,
-				"-p", request.AppPath,
-			),
+			command.NewCfShellCommand(pushArgs...),
 		}
 	} else {
-		pushArgs := []string{
-			"push",
-			candidateName,
-			"-f", request.ManifestPath,
-			"-p", request.AppPath,
-		}
 		if request.Instances != 0 {
 			pushArgs = append(pushArgs, "-i", strconv.Itoa(request.Instances))
 		}
