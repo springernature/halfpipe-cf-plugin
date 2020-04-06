@@ -90,6 +90,38 @@ func TestGivesBackAPushPlanForDockerImage(t *testing.T) {
 	assert.Equal(t, expectedPlan, commands)
 }
 
+func TestGivesBackAPushPlanForWorkerDockerImage(t *testing.T) {
+	manifestPath := "path/to/manifest.yml"
+	testDomain := "domain.com"
+
+	request := halfpipe_cf_plugin.Request{
+		ManifestPath:   manifestPath,
+		TestDomain:     testDomain,
+		DockerUsername: "kehe",
+	}
+
+	application := manifest.Application{
+		Name:    "my-app",
+		NoRoute: true,
+		Docker: manifest.DockerInfo{
+			Image: "yay",
+		},
+	}
+	expectedApplicationName := helpers.CreateCandidateAppName(application.Name)
+
+	expectedPlan := plan.Plan{
+		command.NewCfShellCommand("push", expectedApplicationName, "-f", manifestPath, "--docker-image", application.Docker.Image, "--docker-username", request.DockerUsername),
+	}
+
+	push := NewPushPlanner(helpers.NewMockCliConnection())
+
+	commands, err := push.GetPlan(application, request)
+
+	assert.Nil(t, err)
+	assert.Len(t, commands, 1)
+	assert.Equal(t, expectedPlan, commands)
+}
+
 func TestGivesBackAPushPlanWithInstances(t *testing.T) {
 	manifestPath := "path/to/manifest.yml"
 	appPath := "path/to/app.jar"
