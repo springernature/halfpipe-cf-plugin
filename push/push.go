@@ -42,7 +42,6 @@ func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plug
 		"push",
 		candidateName,
 		"-f", request.ManifestPath,
-		//"-p", request.AppPath,
 	}
 	if application.Docker.Image == "" {
 		pushArgs = append(pushArgs, "-p", request.AppPath)
@@ -57,7 +56,9 @@ func (p push) GetPlan(application manifest.Application, request halfpipe_cf_plug
 			pushArgs = append(pushArgs, "-i", strconv.Itoa(request.Instances))
 		}
 		pushArgs = append(pushArgs, "--no-route", "--no-start")
-
+		if application.Docker.Image != "" {
+			pushArgs = append(pushArgs, "--docker-image", application.Docker.Image, "--docker-username", request.DockerUsername)
+		}
 		pl = plan.Plan{
 			command.NewCfShellCommand(pushArgs...),
 			command.NewCfShellCommand(

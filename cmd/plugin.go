@@ -23,7 +23,7 @@ import (
 
 type Halfpipe struct{}
 
-func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string, instances int) {
+func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string, instances int, dockerUsername string) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
 	aP := flagSet.String("appPath", "", "Path to the app")
@@ -31,11 +31,12 @@ func parseArgs(args []string) (manifestPath string, appPath string, testDomain s
 	tO := flagSet.Duration("timeout", 5*time.Minute, "Timeout for each command")
 	pS := flagSet.String("preStartCommand", "", "cf command to run before the application is started. Supports multiple commands semi-colon delimited.")
 	iC := flagSet.Int("instances", 0, "Instances to deploy. Overrides value in manifest")
+	dU := flagSet.String("dockerUsername", "", "username to use when connecting to Docker Hub")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
 
-	return *mP, *aP, *tD, *tO, *pS, *iC
+	return *mP, *aP, *tD, *tO, *pS, *iC, *dU
 }
 
 func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
@@ -47,7 +48,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(0)
 	}
 
-	manifestPath, appPath, testDomain, timeout, preStartCommand, instances := parseArgs(args)
+	manifestPath, appPath, testDomain, timeout, preStartCommand, instances, dockerUsername := parseArgs(args)
 
 	// not sure if this will ever happen in reality, but in the integration tests
 	// we are given the string in quotes `"<value>"`
@@ -63,6 +64,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		Timeout:         timeout,
 		PreStartCommand: preStartCommand,
 		Instances:       instances,
+		DockerUsername:  dockerUsername,
 	}
 
 	if err := pluginRequest.Verify(manifestPath, manifest.NewManifestReadWrite(afero.Afero{Fs: afero.NewOsFs()})); err != nil {
@@ -100,14 +102,14 @@ func (Halfpipe) GetMetadata() cfPlugin.PluginMetadata {
 				Name:     config.PUSH,
 				HelpText: "Pushes the app with name `my-app` as a `my-app-candidate` and binds a single temporary route to it for testing",
 				UsageDetails: cfPlugin.Usage{
-					Usage: "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-timeout TIMEOUT] [-preStartCommand CF COMMAND]",
+					Usage: "cf halfpipe-push [-manifestPath PATH] [-appPath PATH] [-testDomain DOMAIN] [-timeout TIMEOUT] [-preStartCommand CF COMMAND] [-dockerUsername DOCKER USERNAME]",
 					Options: map[string]string{
 						"manifestPath":    "Relative or absolute path to cf manifest",
 						"appPath":         "Relative or absolute path to the app bits you wish to deploy",
 						"testDomain":      "Domain that will be used when constructing the candidate route for the app",
 						"timeout":         "Timeout for all the sub commands, example 10s, 2m37s",
 						"preStartCommand": "cf command to run before the application is started. Supports multiple commands semi-colon delimited.",
-						"instances":       "how many instances to push the app with. If not specified it will read the instance count from the manifest",
+						"dockerUsername":  "username to use when connecting to Docker Hub",
 					},
 				},
 			},

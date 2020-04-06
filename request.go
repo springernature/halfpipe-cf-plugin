@@ -26,6 +26,7 @@ type Request struct {
 	Timeout         time.Duration
 	PreStartCommand string
 	Instances       int
+	DockerUsername  string
 }
 
 func (r Request) Verify(manifestPath string, manifestReader manifest.ReaderWriter) (err error) {
