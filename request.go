@@ -26,6 +26,7 @@ type Request struct {
 	Timeout         time.Duration
 	PreStartCommand string
 	Instances       int
+	DockerImage     string
 	DockerUsername  string
 }
 

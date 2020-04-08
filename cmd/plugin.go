@@ -23,7 +23,7 @@ import (
 
 type Halfpipe struct{}
 
-func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string, instances int, dockerUsername string) {
+func parseArgs(args []string) (manifestPath string, appPath string, testDomain string, timeout time.Duration, preStartCommand string, instances int, dockerImage string, dockerUsername string) {
 	flagSet := flag.NewFlagSet("halfpipe", flag.ExitOnError)
 	mP := flagSet.String("manifestPath", "", "Path to the manifest")
 	aP := flagSet.String("appPath", "", "Path to the app")
@@ -31,12 +31,13 @@ func parseArgs(args []string) (manifestPath string, appPath string, testDomain s
 	tO := flagSet.Duration("timeout", 5*time.Minute, "Timeout for each command")
 	pS := flagSet.String("preStartCommand", "", "cf command to run before the application is started. Supports multiple commands semi-colon delimited.")
 	iC := flagSet.Int("instances", 0, "Instances to deploy. Overrides value in manifest")
+	dI := flagSet.String("dockerImage", "", "docker image to push")
 	dU := flagSet.String("dockerUsername", "", "username to use when connecting to Docker Hub")
 	if err := flagSet.Parse(args[1:]); err != nil {
 		panic(err)
 	}
 
-	return *mP, *aP, *tD, *tO, *pS, *iC, *dU
+	return *mP, *aP, *tD, *tO, *pS, *iC, *dI, *dU
 }
 
 func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
@@ -48,7 +49,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		syscall.Exit(0)
 	}
 
-	manifestPath, appPath, testDomain, timeout, preStartCommand, instances, dockerUsername := parseArgs(args)
+	manifestPath, appPath, testDomain, timeout, preStartCommand, instances, dockerImage, dockerUsername := parseArgs(args)
 
 	// not sure if this will ever happen in reality, but in the integration tests
 	// we are given the string in quotes `"<value>"`
@@ -64,6 +65,7 @@ func (Halfpipe) Run(cliConnection cfPlugin.CliConnection, args []string) {
 		Timeout:         timeout,
 		PreStartCommand: preStartCommand,
 		Instances:       instances,
+		DockerImage:     dockerImage,
 		DockerUsername:  dockerUsername,
 	}
 

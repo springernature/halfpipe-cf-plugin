@@ -62,6 +62,7 @@ func TestGivesBackAPushPlanForDockerImage(t *testing.T) {
 	request := halfpipe_cf_plugin.Request{
 		ManifestPath:   manifestPath,
 		TestDomain:     testDomain,
+		DockerImage:    "someImage",
 		DockerUsername: "wryyyy",
 	}
 
@@ -97,6 +98,7 @@ func TestGivesBackAPushPlanForWorkerDockerImage(t *testing.T) {
 	request := halfpipe_cf_plugin.Request{
 		ManifestPath:   manifestPath,
 		TestDomain:     testDomain,
+		DockerImage:    "yay",
 		DockerUsername: "kehe",
 	}
 
